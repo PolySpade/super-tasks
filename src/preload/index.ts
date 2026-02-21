@@ -52,7 +52,7 @@ const api = {
   updateCalendarEvent: (
     calendarId: string,
     eventId: string,
-    updates: { start?: string; end?: string; summary?: string; description?: string }
+    updates: { start?: string; end?: string; summary?: string; description?: string; colorId?: string }
   ) => ipcRenderer.invoke('calendar:update-event', calendarId, eventId, updates),
 
   // Focus sessions

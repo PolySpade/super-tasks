@@ -28,6 +28,7 @@ export interface CalendarEvent {
   end: string
   description?: string
   calendarId: string
+  colorId?: string
 }
 
 export interface TimeBlock {

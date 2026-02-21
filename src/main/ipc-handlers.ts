@@ -264,7 +264,7 @@ export function registerIpcHandlers(): void {
       _event,
       calendarId: string,
       eventId: string,
-      updates: { start?: string; end?: string; summary?: string; description?: string }
+      updates: { start?: string; end?: string; summary?: string; description?: string; colorId?: string }
     ) => {
       try {
         const updated = await updateEvent(calendarId, eventId, updates)

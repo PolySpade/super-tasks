@@ -1,6 +1,21 @@
 import { useState, useEffect } from 'react'
 import { X, Trash2 } from 'lucide-react'
 
+// Google Calendar event colors (colorId 1-11)
+const GCAL_EVENT_COLORS: { id: string; hex: string; label: string }[] = [
+  { id: '1', hex: '#a4bdfc', label: 'Lavender' },
+  { id: '2', hex: '#7ae7bf', label: 'Sage' },
+  { id: '3', hex: '#dbadff', label: 'Grape' },
+  { id: '4', hex: '#ff887c', label: 'Flamingo' },
+  { id: '5', hex: '#fbd75b', label: 'Banana' },
+  { id: '6', hex: '#ffb878', label: 'Tangerine' },
+  { id: '7', hex: '#46d6db', label: 'Peacock' },
+  { id: '8', hex: '#e1e1e1', label: 'Graphite' },
+  { id: '9', hex: '#5484ed', label: 'Blueberry' },
+  { id: '10', hex: '#51b749', label: 'Basil' },
+  { id: '11', hex: '#dc2127', label: 'Tomato' }
+]
+
 interface EventEditModalProps {
   eventId: string
   calendarId: string
@@ -8,6 +23,7 @@ interface EventEditModalProps {
   start: string
   end: string
   description?: string
+  colorId?: string
   onClose: () => void
   onSaved: () => void
   onDeleted: () => void
@@ -30,6 +46,7 @@ export function EventEditModal({
   start,
   end,
   description,
+  colorId: initialColorId,
   onClose,
   onSaved,
   onDeleted
@@ -39,6 +56,7 @@ export function EventEditModal({
   const [startTime, setStartTime] = useState(toTimeInput(start))
   const [endTime, setEndTime] = useState(toTimeInput(end))
   const [desc, setDesc] = useState(description || '')
+  const [selectedColorId, setSelectedColorId] = useState(initialColorId || '')
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [error, setError] = useState('')
@@ -77,7 +95,8 @@ export function EventEditModal({
         summary: name.trim(),
         start: new Date(newStart).toISOString(),
         end: new Date(newEnd).toISOString(),
-        description: desc || undefined
+        description: desc || undefined,
+        colorId: selectedColorId !== (initialColorId || '') ? selectedColorId : undefined
       })
 
       if (result.success) {
@@ -170,6 +189,21 @@ export function EventEditModal({
               rows={3}
               placeholder="Optional"
             />
+          </div>
+          <div className="block-form-field">
+            <label>Color</label>
+            <div className="color-swatch-row">
+              {GCAL_EVENT_COLORS.map((c) => (
+                <button
+                  key={c.id}
+                  type="button"
+                  className={`color-swatch${selectedColorId === c.id ? ' color-swatch-active' : ''}`}
+                  style={{ background: c.hex }}
+                  title={c.label}
+                  onClick={() => setSelectedColorId(c.id)}
+                />
+              ))}
+            </div>
           </div>
           {error && <div className="block-form-error">{error}</div>}
           <div className="plan-confirm-actions">

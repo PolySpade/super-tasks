@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
-import { CalendarEvent, PlannerSettings, Task, TaskList } from '../types'
-import { useCalendar } from '../hooks/useCalendar'
+import { PlannerSettings, Task, TaskList } from '../types'
+import { useCalendar, CalendarEventWithColor } from '../hooks/useCalendar'
 import { usePlanner } from '../hooks/usePlanner'
 import { TimeBlockRow } from './TimeBlock'
 import { PlanConfirm } from './PlanConfirm'
@@ -38,6 +38,17 @@ export function PlanView({ signedIn, taskLists, onOpenSettings }: PlanViewProps)
   }, [taskLists])
 
   const hasApiKey = settings?.aiApiKey && settings.aiApiKey !== ''
+
+  // Map context block names to colors
+  const getBlockColor = (blockName: string): string => {
+    const lower = blockName.toLowerCase()
+    if (lower.includes('deep work') || lower.includes('focus')) return '#5484ed'
+    if (lower.includes('communication') || lower.includes('meeting')) return '#ff887c'
+    if (lower.includes('admin') || lower.includes('planning')) return '#7ae7bf'
+    if (lower.includes('creative')) return '#dbadff'
+    if (lower.includes('review')) return '#46d6db'
+    return '#ffb878'
+  }
 
   const toggleList = (id: string) => {
     setSelectedListIds((prev) => {
@@ -187,13 +198,14 @@ export function PlanView({ signedIn, taskLists, onOpenSettings }: PlanViewProps)
           {events.length > 0 && state === 'idle' && (
             <div className="plan-section">
               <div className="plan-section-label">Today's Events</div>
-              {events.map((event: CalendarEvent) => (
+              {events.map((event: CalendarEventWithColor) => (
                 <TimeBlockRow
                   key={event.id}
                   start={formatTime(event.start)}
                   end={formatTime(event.end)}
                   title={event.summary}
                   type="event"
+                  color={event.color}
                 />
               ))}
             </div>
@@ -224,6 +236,7 @@ export function PlanView({ signedIn, taskLists, onOpenSettings }: PlanViewProps)
                     title={block.blockName}
                     reason={block.reason}
                     type="context-block"
+                    color={getBlockColor(block.blockName)}
                     tasks={block.tasks}
                     onRemove={() => rejectBlock(index)}
                     onRemoveTask={(taskIndex) => rejectTask(index, taskIndex)}

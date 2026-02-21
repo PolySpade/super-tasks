@@ -2333,6 +2333,34 @@ body {
   cursor: not-allowed;
 }
 
+/* Color swatch picker */
+.color-swatch-row {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  padding: 2px 0;
+}
+
+.color-swatch {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: border-color 0.15s, transform 0.1s;
+  padding: 0;
+}
+
+.color-swatch:hover {
+  transform: scale(1.15);
+}
+
+.color-swatch-active {
+  border-color: #fff;
+  box-shadow: 0 0 0 2px var(--text-secondary);
+}
+
+
 /* ═══════════════════════════════════════ */
 /* Dashboard                              */
 /* ═══════════════════════════════════════ */

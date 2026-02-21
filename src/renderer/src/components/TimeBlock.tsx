@@ -8,6 +8,7 @@ interface TimeBlockProps {
   title: string
   reason?: string
   type: 'event' | 'task' | 'break' | 'context-block'
+  color?: string
   onRemove?: () => void
   tasks?: BlockTask[]
   onRemoveTask?: (taskIndex: number) => void
@@ -20,6 +21,7 @@ export function TimeBlockRow({
   title,
   reason,
   type,
+  color,
   onRemove,
   tasks,
   onRemoveTask,
@@ -36,11 +38,13 @@ export function TimeBlockRow({
           ? 'time-block-task'
           : 'time-block-break'
 
+  const barStyle = color ? { background: color } : undefined
+
   if (type === 'context-block') {
     const hasTasks = tasks && tasks.length > 0
     return (
       <div className={`time-block ${typeClass}`}>
-        <div className="time-block-bar" />
+        <div className="time-block-bar" style={barStyle} />
         <div className="time-block-time">
           {start}–{end}
         </div>
@@ -98,7 +102,7 @@ export function TimeBlockRow({
 
   return (
     <div className={`time-block ${typeClass}`}>
-      <div className="time-block-bar" />
+      <div className="time-block-bar" style={barStyle} />
       <div className="time-block-time">
         {start}–{end}
       </div>

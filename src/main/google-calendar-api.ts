@@ -11,7 +11,9 @@ export async function getCalendars() {
   return (res.data.items || []).map((cal) => ({
     id: cal.id || '',
     summary: cal.summary || '',
-    primary: cal.primary || false
+    primary: cal.primary || false,
+    backgroundColor: cal.backgroundColor || '',
+    foregroundColor: cal.foregroundColor || ''
   }))
 }
 
@@ -31,7 +33,8 @@ export async function getEvents(calendarId: string, timeMin: string, timeMax: st
     start: event.start?.dateTime || event.start?.date || '',
     end: event.end?.dateTime || event.end?.date || '',
     description: event.description || '',
-    calendarId
+    calendarId,
+    colorId: event.colorId || ''
   }))
 }
 
@@ -56,7 +59,7 @@ export async function createEvent(
 export async function updateEvent(
   calendarId: string,
   eventId: string,
-  updates: { start?: string; end?: string; summary?: string; description?: string }
+  updates: { start?: string; end?: string; summary?: string; description?: string; colorId?: string }
 ) {
   const api = getCalendarApi()
   const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone
@@ -65,6 +68,7 @@ export async function updateEvent(
   if (updates.description !== undefined) requestBody.description = updates.description
   if (updates.start !== undefined) requestBody.start = { dateTime: updates.start, timeZone }
   if (updates.end !== undefined) requestBody.end = { dateTime: updates.end, timeZone }
+  if (updates.colorId !== undefined) requestBody.colorId = updates.colorId || null
 
   const res = await api.events.patch({ calendarId, eventId, requestBody })
   return res.data

@@ -16,15 +16,19 @@ import { Task, TaskList, PlannerSettings } from '../types'
 
 type CalendarViewType = 'dayGridMonth' | 'timeGridWeek' | 'timeGridDay'
 
-// Category color coding based on keyword matching
-function getCategoryColor(summary: string): string {
-  const lower = summary.toLowerCase()
-  if (lower.includes('thesis')) return '#9333ea'
-  if (lower.includes('work')) return '#4a7dff'
-  if (lower.includes('personal')) return '#34d399'
-  if (lower.includes('meeting') || lower.includes('meet')) return '#f59e0b'
-  if (lower.includes('exercise') || lower.includes('gym') || lower.includes('workout')) return '#ef4444'
-  return '#6a6a88'
+// Google Calendar event colorId → hex (stable across the API)
+const GCAL_EVENT_COLORS: Record<string, string> = {
+  '1': '#a4bdfc', // Lavender
+  '2': '#7ae7bf', // Sage
+  '3': '#dbadff', // Grape
+  '4': '#ff887c', // Flamingo
+  '5': '#fbd75b', // Banana
+  '6': '#ffb878', // Tangerine
+  '7': '#46d6db', // Peacock
+  '8': '#e1e1e1', // Graphite
+  '9': '#5484ed', // Blueberry
+  '10': '#51b749', // Basil
+  '11': '#dc2127'  // Tomato
 }
 
 export function CalendarView() {
@@ -38,6 +42,9 @@ export function CalendarView() {
   const [settings, setSettings] = useState<PlannerSettings | null>(null)
   const [currentView, setCurrentView] = useState<CalendarViewType>('timeGridWeek')
   const [calendarTitle, setCalendarTitle] = useState('')
+
+  // Calendar colors: calendarId → backgroundColor
+  const [calendarColors, setCalendarColors] = useState<Map<string, string>>(new Map())
 
   // Schedule modal state
   const [modalOpen, setModalOpen] = useState(false)
@@ -55,6 +62,7 @@ export function CalendarView() {
     start: string
     end: string
     description?: string
+    colorId?: string
   } | null>(null)
 
   // Restore auth session on mount
@@ -65,11 +73,23 @@ export function CalendarView() {
         if (sessionResult.success) {
           setSignedIn(true)
 
-          // Fetch task lists, settings, and tasks in parallel
-          const [listsResult, settingsResult] = await Promise.all([
+          // Fetch task lists, settings, calendars, and tasks in parallel
+          const [listsResult, settingsResult, calendarsResult] = await Promise.all([
             window.api.getTaskLists(),
-            window.api.getPlannerSettings()
+            window.api.getPlannerSettings(),
+            window.api.getCalendars()
           ])
+
+          // Build calendar color map
+          if (calendarsResult.success && calendarsResult.data) {
+            const colorMap = new Map<string, string>()
+            for (const cal of calendarsResult.data) {
+              if (cal.id && cal.backgroundColor) {
+                colorMap.set(cal.id, cal.backgroundColor)
+              }
+            }
+            setCalendarColors(colorMap)
+          }
 
           if (listsResult.success && listsResult.data) {
             const lists: TaskList[] = listsResult.data.map((l: any) => ({
@@ -134,9 +154,12 @@ export function CalendarView() {
   const calendarEvents: EventInput[] = useMemo(() => {
     const mapped: EventInput[] = []
 
-    // Calendar events
+    // Calendar events — resolve color from event colorId or calendar backgroundColor
     for (const evt of events) {
-      const color = getCategoryColor(evt.summary)
+      const color =
+        (evt.colorId && GCAL_EVENT_COLORS[evt.colorId]) ||
+        calendarColors.get(evt.calendarId) ||
+        '#4a7dff'
       mapped.push({
         id: evt.id,
         title: evt.summary,
@@ -152,17 +175,17 @@ export function CalendarView() {
       })
     }
 
-    // Tasks with due dates (show as all-day events)
+    // Tasks with due dates (show as all-day events) — fixed green
+    const taskColor = '#34d399'
     for (const task of allTasks) {
       if (task.due && task.status === 'needsAction') {
-        const color = getCategoryColor(task.title)
         mapped.push({
           id: `task-${task.id}`,
           title: task.title,
           start: task.due,
           allDay: true,
-          backgroundColor: color,
-          borderColor: color,
+          backgroundColor: taskColor,
+          borderColor: taskColor,
           editable: false,
           extendedProps: {
             type: 'task',
@@ -173,7 +196,7 @@ export function CalendarView() {
     }
 
     return mapped
-  }, [events, allTasks])
+  }, [events, allTasks, calendarColors])
 
   // FullCalendar callbacks
   const handleDatesSet = useCallback(
@@ -274,13 +297,15 @@ export function CalendarView() {
         return
       }
 
+      const sourceEvent = events.find((e) => e.id === event.id)
       setEditEvent({
         id: event.id,
         calendarId: event.extendedProps?.calendarId || calendarId,
         summary: event.title,
         start: event.start?.toISOString() || '',
         end: event.end?.toISOString() || '',
-        description: event.extendedProps?.description || ''
+        description: event.extendedProps?.description || '',
+        colorId: sourceEvent?.colorId || ''
       })
     },
     [calendarId]
@@ -512,6 +537,7 @@ export function CalendarView() {
           start={editEvent.start}
           end={editEvent.end}
           description={editEvent.description}
+          colorId={editEvent.colorId}
           onClose={() => setEditEvent(null)}
           onSaved={handleEventSaved}
           onDeleted={handleEventDeleted}
