@@ -1,6 +1,6 @@
 import { app } from 'electron'
 import { electronApp, optimizer } from '@electron-toolkit/utils'
-import { createWindow, toggleWindow, getWindow } from './window'
+import { createWindow, toggleWindow, getWindow, setQuitting } from './window'
 import { createTray, getTray } from './tray'
 import { registerIpcHandlers } from './ipc-handlers'
 import { restoreSession } from './google-auth'
@@ -21,6 +21,10 @@ if (!gotTheLock) {
     if (win && tray) {
       toggleWindow(tray.getBounds())
     }
+  })
+
+  app.on('before-quit', () => {
+    setQuitting(true)
   })
 
   app.whenReady().then(async () => {

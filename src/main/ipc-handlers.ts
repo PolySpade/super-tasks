@@ -13,7 +13,7 @@ import { getCalendars, getEvents, createEvent, updateEvent, deleteEvent } from '
 import { getSettings, updateSettings } from './settings-store'
 import { generatePlan, validateApiKey, generateSubtasks, workBackwards } from './ai-planner'
 import { getStartupEnabled, setStartupEnabled } from './startup'
-import { hideWindow, toggleCalendarWindow } from './window'
+import { hideWindow, toggleCalendarWindow, setAlwaysOnTop, getAlwaysOnTop } from './window'
 import {
   logSession,
   getTodaySessions,
@@ -246,6 +246,15 @@ export function registerIpcHandlers(): void {
 
   ipcMain.handle('window:open-calendar', () => {
     toggleCalendarWindow()
+  })
+
+  ipcMain.handle('window:get-always-on-top', () => {
+    return { enabled: getAlwaysOnTop() }
+  })
+
+  ipcMain.handle('window:set-always-on-top', (_event, enabled: boolean) => {
+    setAlwaysOnTop(enabled)
+    return { success: true }
   })
 
   // Calendar update

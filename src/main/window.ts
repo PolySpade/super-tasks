@@ -4,6 +4,12 @@ import { is } from '@electron-toolkit/utils'
 
 let mainWindow: BrowserWindow | null = null
 let calendarWindow: BrowserWindow | null = null
+let alwaysOnTopEnabled = true
+let isQuitting = false
+
+export function setQuitting(value: boolean): void {
+  isQuitting = value
+}
 
 export function createWindow(): BrowserWindow {
   mainWindow = new BrowserWindow({
@@ -12,8 +18,8 @@ export function createWindow(): BrowserWindow {
     show: false,
     frame: false,
     resizable: false,
-    skipTaskbar: true,
-    alwaysOnTop: true,
+    skipTaskbar: false,
+    alwaysOnTop: alwaysOnTopEnabled,
     transparent: false,
     backgroundColor: '#1e1e1e',
     webPreferences: {
@@ -22,8 +28,12 @@ export function createWindow(): BrowserWindow {
     }
   })
 
-  mainWindow.on('blur', () => {
-    mainWindow?.hide()
+  // Hide to tray on close instead of quitting (unless app is actually quitting)
+  mainWindow.on('close', (e) => {
+    if (!isQuitting && mainWindow && !mainWindow.isDestroyed()) {
+      e.preventDefault()
+      mainWindow.hide()
+    }
   })
 
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
@@ -125,4 +135,15 @@ export function toggleCalendarWindow(): void {
   } else {
     createCalendarWindow()
   }
+}
+
+export function setAlwaysOnTop(enabled: boolean): void {
+  alwaysOnTopEnabled = enabled
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.setAlwaysOnTop(enabled)
+  }
+}
+
+export function getAlwaysOnTop(): boolean {
+  return alwaysOnTopEnabled
 }

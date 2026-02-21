@@ -74,7 +74,9 @@ const api = {
   notify: (title: string, body: string) => ipcRenderer.invoke('notify', title, body),
 
   // Window
-  hideWindow: () => ipcRenderer.invoke('window:hide')
+  hideWindow: () => ipcRenderer.invoke('window:hide'),
+  getAlwaysOnTop: () => ipcRenderer.invoke('window:get-always-on-top'),
+  setAlwaysOnTop: (enabled: boolean) => ipcRenderer.invoke('window:set-always-on-top', enabled)
 }
 
 contextBridge.exposeInMainWorld('api', api)

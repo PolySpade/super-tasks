@@ -25,6 +25,8 @@ interface ElectronAPI {
   setStartupEnabled: (enabled: boolean) => Promise<{ success: boolean }>
   hideWindow: () => Promise<void>
   openCalendarWindow: () => Promise<void>
+  getAlwaysOnTop: () => Promise<{ enabled: boolean }>
+  setAlwaysOnTop: (enabled: boolean) => Promise<{ success: boolean }>
   logFocusSession: (session: any) => Promise<{ success: boolean; error?: string }>
   getFocusTodaySessions: () => Promise<{ success: boolean; data?: any[]; error?: string }>
   getFocusStats: () => Promise<{ success: boolean; data?: any; error?: string }>

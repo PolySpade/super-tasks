@@ -10,6 +10,7 @@ type KeyStatus = 'idle' | 'validating' | 'valid' | 'invalid'
 
 export function SettingsPanel({ onSignOut }: SettingsPanelProps) {
   const [startupEnabled, setStartupEnabled] = useState(false)
+  const [alwaysOnTop, setAlwaysOnTop] = useState(true)
   const [settings, setSettings] = useState<PlannerSettings>({
     aiProvider: 'anthropic',
     aiApiKey: '',
@@ -33,6 +34,9 @@ export function SettingsPanel({ onSignOut }: SettingsPanelProps) {
   useEffect(() => {
     window.api.getStartupEnabled().then((result) => {
       setStartupEnabled(result.enabled)
+    })
+    window.api.getAlwaysOnTop().then((result) => {
+      setAlwaysOnTop(result.enabled)
     })
     window.api.getPlannerSettings().then((result) => {
       if (result.success && result.data) {
@@ -62,6 +66,12 @@ export function SettingsPanel({ onSignOut }: SettingsPanelProps) {
     const newValue = !startupEnabled
     setStartupEnabled(newValue)
     await window.api.setStartupEnabled(newValue)
+  }
+
+  const handleAlwaysOnTopToggle = async () => {
+    const newValue = !alwaysOnTop
+    setAlwaysOnTop(newValue)
+    await window.api.setAlwaysOnTop(newValue)
   }
 
   const handleProviderChange = async (provider: PlannerSettings['aiProvider']) => {
@@ -338,6 +348,18 @@ export function SettingsPanel({ onSignOut }: SettingsPanelProps) {
 
       {/* General */}
       <div className="settings-section-label">General</div>
+
+      <div className="settings-item">
+        <span>Always on top</span>
+        <label className="toggle">
+          <input
+            type="checkbox"
+            checked={alwaysOnTop}
+            onChange={handleAlwaysOnTopToggle}
+          />
+          <span className="toggle-slider" />
+        </label>
+      </div>
 
       <div className="settings-item">
         <span>Launch at startup</span>

@@ -1,6 +1,6 @@
 import { Tray, Menu, app, nativeImage } from 'electron'
 import { join } from 'path'
-import { toggleWindow, getWindow } from './window'
+import { toggleWindow, getWindow, setQuitting } from './window'
 
 let tray: Tray | null = null
 
@@ -35,6 +35,7 @@ export function createTray(): Tray {
       {
         label: 'Quit',
         click: () => {
+          setQuitting(true)
           app.quit()
         }
       }
