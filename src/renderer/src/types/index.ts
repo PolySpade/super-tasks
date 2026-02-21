@@ -11,6 +11,8 @@ export interface Task {
   due?: string
   completed?: string
   updated?: string
+  parent?: string
+  children?: Task[]
 }
 
 export interface IpcResult<T = unknown> {

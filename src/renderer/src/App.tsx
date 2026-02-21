@@ -20,6 +20,7 @@ export default function App() {
     useTaskLists(signedIn)
   const {
     tasks,
+    allTasks,
     loading: tasksLoading,
     error: tasksError,
     addTask,
@@ -32,19 +33,31 @@ export default function App() {
 
   const [view, setView] = useState<View>('tasks')
   const [selectedTask, setSelectedTask] = useState<Task | null>(null)
+  const [subtaskParentId, setSubtaskParentId] = useState<string | undefined>()
+  const [subtaskParentTitle, setSubtaskParentTitle] = useState<string | undefined>()
 
   const error = listsError || tasksError
 
   const taskCount = useMemo(() => {
-    const total = tasks.length
-    const completed = tasks.filter((t) => t.status === 'completed').length
+    const total = allTasks.length
+    const completed = allTasks.filter((t) => t.status === 'completed').length
     return { total, completed }
-  }, [tasks])
+  }, [allTasks])
 
-  // Keep selectedTask in sync with tasks array
+  // Keep selectedTask in sync with tasks array (search tree)
   useEffect(() => {
     if (selectedTask) {
-      const updated = tasks.find((t) => t.id === selectedTask.id)
+      const findTask = (list: Task[]): Task | undefined => {
+        for (const t of list) {
+          if (t.id === selectedTask.id) return t
+          if (t.children) {
+            const found = findTask(t.children)
+            if (found) return found
+          }
+        }
+        return undefined
+      }
+      const updated = findTask(tasks)
       if (updated) setSelectedTask(updated)
     }
   }, [tasks])
@@ -52,7 +65,10 @@ export default function App() {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        if (view !== 'tasks') {
+        if (subtaskParentId) {
+          setSubtaskParentId(undefined)
+          setSubtaskParentTitle(undefined)
+        } else if (view !== 'tasks') {
           setView('tasks')
           setSelectedTask(null)
         } else {
@@ -62,7 +78,7 @@ export default function App() {
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [view])
+  }, [view, subtaskParentId])
 
   const handleClose = () => window.api.hideWindow()
 
@@ -84,6 +100,27 @@ export default function App() {
   const handleBackFromDetail = () => {
     setView('tasks')
     setSelectedTask(null)
+  }
+
+  const handleAddSubtask = (parentId: string) => {
+    // Find parent title from the tree
+    const findTitle = (list: Task[]): string | undefined => {
+      for (const t of list) {
+        if (t.id === parentId) return t.title
+        if (t.children) {
+          const found = findTitle(t.children)
+          if (found) return found
+        }
+      }
+      return undefined
+    }
+    setSubtaskParentId(parentId)
+    setSubtaskParentTitle(findTitle(tasks) || 'Task')
+  }
+
+  const handleCancelSubtask = () => {
+    setSubtaskParentId(undefined)
+    setSubtaskParentTitle(undefined)
   }
 
   const getTitle = () => {
@@ -151,8 +188,14 @@ export default function App() {
                 onToggle={toggleComplete}
                 onDelete={removeTask}
                 onSelectTask={handleSelectTask}
+                onAddSubtask={handleAddSubtask}
               />
-              <AddTaskForm onAdd={addTask} />
+              <AddTaskForm
+                onAdd={addTask}
+                parentId={subtaskParentId}
+                parentTitle={subtaskParentTitle}
+                onCancelSubtask={handleCancelSubtask}
+              />
             </>
           )}
         </>

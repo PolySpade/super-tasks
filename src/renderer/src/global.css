@@ -400,6 +400,67 @@ body {
   opacity: 0.5;
 }
 
+/* Subtask styles */
+.task-item.subtask {
+  border-left: 2px solid var(--border);
+  margin-left: 0;
+}
+
+.task-item.subtask .task-title {
+  font-size: 12px;
+}
+
+.checkmark-small {
+  width: 15px !important;
+  height: 15px !important;
+}
+
+.task-item .add-subtask-btn {
+  opacity: 0;
+  transition: opacity 0.12s;
+  width: 22px;
+  height: 22px;
+}
+
+.task-item:hover .add-subtask-btn {
+  opacity: 0.5;
+}
+
+.task-item:hover .add-subtask-btn:hover {
+  opacity: 1;
+  color: var(--accent) !important;
+}
+
+.subtask-count {
+  font-size: 10px;
+  color: var(--text-tertiary);
+  background: var(--bg-tertiary);
+  padding: 1px 5px;
+  border-radius: 8px;
+}
+
+/* Subtask indicator in add form */
+.subtask-indicator {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  font-size: 11px;
+  color: var(--accent);
+  background: var(--accent-dim);
+  border-bottom: 1px solid var(--border);
+}
+
+.subtask-indicator strong {
+  font-weight: 600;
+}
+
+.subtask-indicator .icon-btn {
+  width: 18px;
+  height: 18px;
+  margin-left: auto;
+}
+
 /* ═══════════════════════════════════════ */
 /* Checkbox                               */
 /* ═══════════════════════════════════════ */

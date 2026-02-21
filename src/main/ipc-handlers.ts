@@ -5,6 +5,7 @@ import {
   getTasks,
   createTask,
   updateTask,
+  moveTask,
   deleteTask,
   toggleTaskComplete
 } from './google-tasks-api'
@@ -63,9 +64,9 @@ export function registerIpcHandlers(): void {
 
   ipcMain.handle(
     'tasks:create',
-    async (_event, taskListId: string, title: string, notes?: string, due?: string) => {
+    async (_event, taskListId: string, title: string, notes?: string, due?: string, parentId?: string) => {
       try {
-        const task = await createTask(taskListId, title, notes, due)
+        const task = await createTask(taskListId, title, notes, due, parentId)
         return { success: true, data: task }
       } catch (error: any) {
         return { success: false, error: error.message }
@@ -78,6 +79,18 @@ export function registerIpcHandlers(): void {
     async (_event, taskListId: string, taskId: string, updates: { title?: string; notes?: string; due?: string | null }) => {
       try {
         const task = await updateTask(taskListId, taskId, updates)
+        return { success: true, data: task }
+      } catch (error: any) {
+        return { success: false, error: error.message }
+      }
+    }
+  )
+
+  ipcMain.handle(
+    'tasks:move',
+    async (_event, taskListId: string, taskId: string, parentId?: string, previousId?: string) => {
+      try {
+        const task = await moveTask(taskListId, taskId, parentId, previousId)
         return { success: true, data: task }
       } catch (error: any) {
         return { success: false, error: error.message }

@@ -1,8 +1,8 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { Task } from '../types'
 
 export function useTasks(signedIn: boolean, taskListId: string) {
-  const [tasks, setTasks] = useState<Task[]>([])
+  const [flatTasks, setFlatTasks] = useState<Task[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -12,7 +12,7 @@ export function useTasks(signedIn: boolean, taskListId: string) {
     setError(null)
     const result = await window.api.getTasks(taskListId)
     if (result.success && result.data) {
-      setTasks(
+      setFlatTasks(
         result.data.map((t: any) => ({
           id: t.id,
           title: t.title,
@@ -20,7 +20,8 @@ export function useTasks(signedIn: boolean, taskListId: string) {
           notes: t.notes || '',
           due: t.due || undefined,
           completed: t.completed,
-          updated: t.updated
+          updated: t.updated,
+          parent: t.parent || undefined
         }))
       )
     } else {
@@ -33,16 +34,39 @@ export function useTasks(signedIn: boolean, taskListId: string) {
     fetchTasks()
   }, [fetchTasks])
 
+  // Build tree structure from flat list
+  const tasks = useMemo(() => {
+    const taskMap = new Map<string, Task>()
+    const roots: Task[] = []
+
+    // First pass: create map entries with empty children
+    for (const t of flatTasks) {
+      taskMap.set(t.id, { ...t, children: [] })
+    }
+
+    // Second pass: build tree
+    for (const t of flatTasks) {
+      const node = taskMap.get(t.id)!
+      if (t.parent && taskMap.has(t.parent)) {
+        taskMap.get(t.parent)!.children!.push(node)
+      } else {
+        roots.push(node)
+      }
+    }
+
+    return roots
+  }, [flatTasks])
+
   const addTask = useCallback(
-    async (title: string, notes?: string, due?: string) => {
+    async (title: string, notes?: string, due?: string, parentId?: string) => {
       if (!taskListId) return
       const tempId = `temp-${Date.now()}`
-      const tempTask: Task = { id: tempId, title, status: 'needsAction', notes, due }
-      setTasks((prev) => [tempTask, ...prev])
+      const tempTask: Task = { id: tempId, title, status: 'needsAction', notes, due, parent: parentId }
+      setFlatTasks((prev) => [tempTask, ...prev])
 
-      const result = await window.api.createTask(taskListId, title, notes, due)
+      const result = await window.api.createTask(taskListId, title, notes, due, parentId)
       if (result.success && result.data) {
-        setTasks((prev) =>
+        setFlatTasks((prev) =>
           prev.map((t) =>
             t.id === tempId
               ? {
@@ -51,13 +75,14 @@ export function useTasks(signedIn: boolean, taskListId: string) {
                   status: result.data.status,
                   notes: result.data.notes || '',
                   due: result.data.due || undefined,
-                  updated: result.data.updated
+                  updated: result.data.updated,
+                  parent: result.data.parent || undefined
                 }
               : t
           )
         )
       } else {
-        setTasks((prev) => prev.filter((t) => t.id !== tempId))
+        setFlatTasks((prev) => prev.filter((t) => t.id !== tempId))
         setError(result.error || 'Failed to create task')
       }
     },
@@ -67,8 +92,7 @@ export function useTasks(signedIn: boolean, taskListId: string) {
   const updateTask = useCallback(
     async (taskId: string, updates: { title?: string; notes?: string; due?: string | null }) => {
       if (!taskListId) return
-      // Optimistic update
-      setTasks((prev) =>
+      setFlatTasks((prev) =>
         prev.map((t) =>
           t.id === taskId
             ? {
@@ -83,7 +107,7 @@ export function useTasks(signedIn: boolean, taskListId: string) {
 
       const result = await window.api.updateTask(taskListId, taskId, updates)
       if (!result.success) {
-        fetchTasks() // Rollback by refetching
+        fetchTasks()
         setError(result.error || 'Failed to update task')
       }
     },
@@ -93,22 +117,29 @@ export function useTasks(signedIn: boolean, taskListId: string) {
   const removeTask = useCallback(
     async (taskId: string) => {
       if (!taskListId) return
-      const prev = tasks
-      setTasks((t) => t.filter((task) => task.id !== taskId))
+      const prev = flatTasks
+      // Remove the task and its children
+      const idsToRemove = new Set<string>([taskId])
+      for (const t of flatTasks) {
+        if (t.parent && idsToRemove.has(t.parent)) {
+          idsToRemove.add(t.id)
+        }
+      }
+      setFlatTasks((t) => t.filter((task) => !idsToRemove.has(task.id)))
 
       const result = await window.api.deleteTask(taskListId, taskId)
       if (!result.success) {
-        setTasks(prev)
+        setFlatTasks(prev)
         setError(result.error || 'Failed to delete task')
       }
     },
-    [taskListId, tasks]
+    [taskListId, flatTasks]
   )
 
   const toggleComplete = useCallback(
     async (taskId: string, completed: boolean) => {
       if (!taskListId) return
-      setTasks((prev) =>
+      setFlatTasks((prev) =>
         prev.map((t) =>
           t.id === taskId
             ? { ...t, status: completed ? 'completed' : 'needsAction' }
@@ -118,7 +149,7 @@ export function useTasks(signedIn: boolean, taskListId: string) {
 
       const result = await window.api.toggleTask(taskListId, taskId, completed)
       if (!result.success) {
-        setTasks((prev) =>
+        setFlatTasks((prev) =>
           prev.map((t) =>
             t.id === taskId
               ? { ...t, status: completed ? 'needsAction' : 'completed' }
@@ -131,8 +162,12 @@ export function useTasks(signedIn: boolean, taskListId: string) {
     [taskListId]
   )
 
+  // Flat list for counting (includes subtasks)
+  const allTasks = flatTasks
+
   return {
     tasks,
+    allTasks,
     loading,
     error,
     addTask,

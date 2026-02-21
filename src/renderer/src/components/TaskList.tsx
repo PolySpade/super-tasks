@@ -1,4 +1,4 @@
-import { Loader2, CheckCircle2, Circle } from 'lucide-react'
+import { Loader2, CheckCircle2 } from 'lucide-react'
 import { Task } from '../types'
 import { TaskItem } from './TaskItem'
 
@@ -8,9 +8,10 @@ interface TaskListProps {
   onToggle: (taskId: string, completed: boolean) => void
   onDelete: (taskId: string) => void
   onSelectTask: (task: Task) => void
+  onAddSubtask: (parentId: string) => void
 }
 
-export function TaskList({ tasks, loading, onToggle, onDelete, onSelectTask }: TaskListProps) {
+export function TaskList({ tasks, loading, onToggle, onDelete, onSelectTask, onAddSubtask }: TaskListProps) {
   if (loading) {
     return (
       <div className="task-list-empty">
@@ -43,6 +44,7 @@ export function TaskList({ tasks, loading, onToggle, onDelete, onSelectTask }: T
           onToggle={onToggle}
           onDelete={onDelete}
           onSelect={onSelectTask}
+          onAddSubtask={onAddSubtask}
         />
       ))}
       {completed.length > 0 && (
@@ -57,6 +59,7 @@ export function TaskList({ tasks, loading, onToggle, onDelete, onSelectTask }: T
               onToggle={onToggle}
               onDelete={onDelete}
               onSelect={onSelectTask}
+              onAddSubtask={onAddSubtask}
             />
           ))}
         </>

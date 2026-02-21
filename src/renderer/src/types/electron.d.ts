@@ -5,8 +5,9 @@ interface ElectronAPI {
   restoreSession: () => Promise<{ success: boolean }>
   getTaskLists: () => Promise<{ success: boolean; data?: any[]; error?: string }>
   getTasks: (taskListId: string) => Promise<{ success: boolean; data?: any[]; error?: string }>
-  createTask: (taskListId: string, title: string, notes?: string, due?: string) => Promise<{ success: boolean; data?: any; error?: string }>
+  createTask: (taskListId: string, title: string, notes?: string, due?: string, parentId?: string) => Promise<{ success: boolean; data?: any; error?: string }>
   updateTask: (taskListId: string, taskId: string, updates: { title?: string; notes?: string; due?: string | null }) => Promise<{ success: boolean; data?: any; error?: string }>
+  moveTask: (taskListId: string, taskId: string, parentId?: string, previousId?: string) => Promise<{ success: boolean; data?: any; error?: string }>
   deleteTask: (taskListId: string, taskId: string) => Promise<{ success: boolean; error?: string }>
   toggleTask: (taskListId: string, taskId: string, completed: boolean) => Promise<{ success: boolean; data?: any; error?: string }>
   getStartupEnabled: () => Promise<{ enabled: boolean }>

@@ -1,11 +1,13 @@
-import { Calendar, Trash2, FileText } from 'lucide-react'
+import { Calendar, Trash2, FileText, Plus } from 'lucide-react'
 import { Task } from '../types'
 
 interface TaskItemProps {
   task: Task
+  depth?: number
   onToggle: (taskId: string, completed: boolean) => void
   onDelete: (taskId: string) => void
   onSelect: (task: Task) => void
+  onAddSubtask: (parentId: string) => void
 }
 
 function formatDueDate(due: string): string {
@@ -43,54 +45,87 @@ function isDueToday(due: string): boolean {
   return dueDate.getTime() === today.getTime()
 }
 
-export function TaskItem({ task, onToggle, onDelete, onSelect }: TaskItemProps) {
+export function TaskItem({ task, depth = 0, onToggle, onDelete, onSelect, onAddSubtask }: TaskItemProps) {
   const isCompleted = task.status === 'completed'
   const overdue = task.due ? isOverdue(task.due, task.status) : false
   const dueToday = task.due ? isDueToday(task.due) : false
+  const hasChildren = task.children && task.children.length > 0
+  const isSubtask = depth > 0
 
   return (
-    <div
-      className={`task-item ${isCompleted ? 'completed' : ''}`}
-      onClick={(e) => {
-        // Don't open detail if clicking checkbox or delete
-        if ((e.target as HTMLElement).closest('.task-checkbox, .delete-btn')) return
-        onSelect(task)
-      }}
-    >
-      <label className="task-checkbox" onClick={(e) => e.stopPropagation()}>
-        <input
-          type="checkbox"
-          checked={isCompleted}
-          onChange={() => onToggle(task.id, !isCompleted)}
-        />
-        <span className="checkmark" />
-      </label>
-      <div className="task-content">
-        <span className="task-title">{task.title}</span>
-        <div className="task-meta">
-          {task.due && (
-            <span className={`task-due ${overdue ? 'overdue' : ''} ${dueToday ? 'due-today' : ''}`}>
-              <Calendar size={10} />
-              {formatDueDate(task.due)}
-            </span>
-          )}
-          {task.notes && (
-            <span className="task-has-notes">
-              <FileText size={10} />
-            </span>
-          )}
-        </div>
-      </div>
-      <button
-        className="icon-btn delete-btn"
+    <>
+      <div
+        className={`task-item ${isCompleted ? 'completed' : ''} ${isSubtask ? 'subtask' : ''}`}
+        style={{ paddingLeft: `${14 + depth * 24}px` }}
         onClick={(e) => {
-          e.stopPropagation()
-          onDelete(task.id)
+          if ((e.target as HTMLElement).closest('.task-checkbox, .delete-btn, .add-subtask-btn')) return
+          onSelect(task)
         }}
-        title="Delete task"
       >
-        <Trash2 size={14} />
-      </button>
-    </div>
+        <label className="task-checkbox" onClick={(e) => e.stopPropagation()}>
+          <input
+            type="checkbox"
+            checked={isCompleted}
+            onChange={() => onToggle(task.id, !isCompleted)}
+          />
+          <span className={`checkmark ${isSubtask ? 'checkmark-small' : ''}`} />
+        </label>
+        <div className="task-content">
+          <span className="task-title">{task.title}</span>
+          <div className="task-meta">
+            {task.due && (
+              <span className={`task-due ${overdue ? 'overdue' : ''} ${dueToday ? 'due-today' : ''}`}>
+                <Calendar size={10} />
+                {formatDueDate(task.due)}
+              </span>
+            )}
+            {task.notes && (
+              <span className="task-has-notes">
+                <FileText size={10} />
+              </span>
+            )}
+            {hasChildren && (
+              <span className="subtask-count">
+                {task.children!.filter(c => c.status !== 'completed').length}/{task.children!.length}
+              </span>
+            )}
+          </div>
+        </div>
+        {!isSubtask && (
+          <button
+            className="icon-btn add-subtask-btn"
+            onClick={(e) => {
+              e.stopPropagation()
+              onAddSubtask(task.id)
+            }}
+            title="Add subtask"
+          >
+            <Plus size={12} />
+          </button>
+        )}
+        <button
+          className="icon-btn delete-btn"
+          onClick={(e) => {
+            e.stopPropagation()
+            onDelete(task.id)
+          }}
+          title="Delete task"
+        >
+          <Trash2 size={14} />
+        </button>
+      </div>
+      {hasChildren &&
+        task.children!.map((child) => (
+          <TaskItem
+            key={child.id}
+            task={child}
+            depth={depth + 1}
+            onToggle={onToggle}
+            onDelete={onDelete}
+            onSelect={onSelect}
+            onAddSubtask={onAddSubtask}
+          />
+        ))}
+    </>
   )
 }

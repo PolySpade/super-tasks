@@ -26,7 +26,8 @@ export async function createTask(
   taskListId: string,
   title: string,
   notes?: string,
-  due?: string
+  due?: string,
+  parentId?: string
 ) {
   const api = getTasksApi()
   const requestBody: any = { title }
@@ -34,6 +35,7 @@ export async function createTask(
   if (due) requestBody.due = new Date(due + 'T00:00:00.000Z').toISOString()
   const res = await api.tasks.insert({
     tasklist: taskListId,
+    parent: parentId || undefined,
     requestBody
   })
   return res.data
@@ -55,6 +57,22 @@ export async function updateTask(
     tasklist: taskListId,
     task: taskId,
     requestBody
+  })
+  return res.data
+}
+
+export async function moveTask(
+  taskListId: string,
+  taskId: string,
+  parentId?: string,
+  previousId?: string
+) {
+  const api = getTasksApi()
+  const res = await api.tasks.move({
+    tasklist: taskListId,
+    task: taskId,
+    parent: parentId || undefined,
+    previous: previousId || undefined
   })
   return res.data
 }
