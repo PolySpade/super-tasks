@@ -22,6 +22,7 @@ export function createWindow(): BrowserWindow {
     alwaysOnTop: alwaysOnTopEnabled,
     transparent: false,
     backgroundColor: '#1e1e1e',
+    icon: join(__dirname, '../../resources/icon.ico'),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: false
@@ -101,6 +102,7 @@ export function createCalendarWindow(): BrowserWindow {
     alwaysOnTop: false,
     backgroundColor: '#1e1e1e',
     title: 'Calendar',
+    icon: join(__dirname, '../../resources/icon.ico'),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: false
