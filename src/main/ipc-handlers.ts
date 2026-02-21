@@ -11,7 +11,7 @@ import {
 } from './google-tasks-api'
 import { getCalendars, getEvents, createEvent, updateEvent, deleteEvent } from './google-calendar-api'
 import { getSettings, updateSettings } from './settings-store'
-import { generatePlan, validateApiKey, generateSubtasks, workBackwards } from './ai-planner'
+import { generatePlan, validateApiKey, generateSubtasks, workBackwards, renameTasks } from './ai-planner'
 import { getStartupEnabled, setStartupEnabled } from './startup'
 import { hideWindow, toggleCalendarWindow, setAlwaysOnTop, getAlwaysOnTop } from './window'
 import {
@@ -334,6 +334,16 @@ export function registerIpcHandlers(): void {
   ipcMain.handle('planner:work-backwards', async (_event, request: any) => {
     try {
       const result = await workBackwards(request)
+      return { success: true, data: result }
+    } catch (error: any) {
+      return { success: false, error: error.message }
+    }
+  })
+
+  // AI Rename
+  ipcMain.handle('tasks:ai-rename', async (_event, tasks: any[]) => {
+    try {
+      const result = await renameTasks({ tasks })
       return { success: true, data: result }
     } catch (error: any) {
       return { success: false, error: error.message }

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Calendar, Sparkles, Plus } from 'lucide-react'
+import { Calendar, Sparkles, Plus, Wand2 } from 'lucide-react'
 import { Task, TaskList } from '../types'
 import { useDashboardData } from '../hooks/useDashboardData'
 import { useDeadlines } from '../hooks/useDeadlines'
@@ -8,6 +8,7 @@ import { WeeklyChart } from './WeeklyChart'
 import { RecentActivity } from './RecentActivity'
 import { DeadlinePreview } from './DeadlinePreview'
 import { QuickAddModal } from './QuickAddModal'
+import { AIRenameModal } from './AIRenameModal'
 
 interface DashboardProps {
   signedIn: boolean
@@ -34,6 +35,7 @@ export function Dashboard({
   } = useDeadlines(signedIn, taskLists)
 
   const [showQuickAdd, setShowQuickAdd] = useState(false)
+  const [showRename, setShowRename] = useState(false)
 
   const today = new Date()
   const dateStr = today.toLocaleDateString('en-US', {
@@ -53,6 +55,10 @@ export function Dashboard({
           <button className="dashboard-action-btn" onClick={() => setShowQuickAdd(true)}>
             <Plus size={14} />
             Quick add
+          </button>
+          <button className="dashboard-action-btn" onClick={() => setShowRename(true)}>
+            <Wand2 size={14} />
+            AI Rename
           </button>
           <button className="dashboard-action-btn dashboard-action-btn-primary" onClick={onNavigateToPlan}>
             <Sparkles size={14} />
@@ -92,6 +98,14 @@ export function Dashboard({
           taskLists={taskLists}
           onClose={() => setShowQuickAdd(false)}
           onCreated={refresh}
+        />
+      )}
+
+      {showRename && (
+        <AIRenameModal
+          taskLists={taskLists}
+          onClose={() => setShowRename(false)}
+          onApplied={refresh}
         />
       )}
     </div>

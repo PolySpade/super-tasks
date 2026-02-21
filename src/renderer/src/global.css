@@ -3449,3 +3449,147 @@ body {
   outline: none;
   color-scheme: dark;
 }
+
+/* ═══════════════════════════════════════ */
+/* AI Rename Modal                        */
+/* ═══════════════════════════════════════ */
+.ai-rename-modal {
+  max-width: 360px;
+  max-height: 480px;
+  display: flex;
+  flex-direction: column;
+}
+
+.ai-rename-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.ai-rename-section-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+
+.ai-rename-error {
+  font-size: 12px;
+  color: var(--error-text);
+  background: var(--error-bg);
+  padding: 6px 10px;
+  border-radius: 6px;
+  margin-bottom: 8px;
+}
+
+.ai-rename-status {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 24px 0;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.ai-rename-done-text {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--success);
+}
+
+.ai-rename-preview {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 12px;
+  max-height: 340px;
+}
+
+.ai-rename-preview::-webkit-scrollbar {
+  width: 5px;
+}
+
+.ai-rename-preview::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.ai-rename-preview::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}
+
+.ai-rename-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+
+.ai-rename-row:hover {
+  background: var(--bg-hover);
+}
+
+.ai-rename-row input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.ai-rename-row .plan-list-check {
+  margin-top: 2px;
+}
+
+.ai-rename-diff {
+  flex: 1;
+  min-width: 0;
+}
+
+.ai-rename-title-diff {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+  font-size: 12px;
+}
+
+.ai-rename-old {
+  color: var(--text-tertiary);
+  text-decoration: line-through;
+}
+
+.ai-rename-new {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.ai-rename-arrow {
+  color: var(--text-tertiary);
+  flex-shrink: 0;
+}
+
+.ai-rename-notes-diff {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+  font-size: 11px;
+  margin-top: 2px;
+}
+
+.ai-rename-actions {
+  display: flex;
+  gap: 8px;
+}

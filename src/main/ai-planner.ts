@@ -366,6 +366,62 @@ export async function workBackwards(request: WorkBackwardsRequest): Promise<{ su
   }
 }
 
+// ═══════════════════════════════════════
+// AI Rename & Improve Tasks
+// ═══════════════════════════════════════
+
+const RENAME_SYSTEM_PROMPT = `You are a task improvement AI. Given a list of tasks with their current titles and notes, improve them.
+
+Rules:
+- Make titles concise, action-oriented, and clear (start with a verb)
+- If notes are empty, add a brief 1-line note with context or first step
+- If notes exist, clean them up for clarity but preserve meaning
+- Do NOT change the meaning or scope of the task
+- Return ONLY valid JSON, no markdown fences or extra text
+
+Return JSON in this exact format:
+{
+  "renames": [
+    { "taskId": "id-here", "newTitle": "Improved title", "newNotes": "Improved or added notes" }
+  ]
+}`
+
+interface RenameTask {
+  id: string
+  title: string
+  notes?: string
+}
+
+function buildRenamePrompt(tasks: RenameTask[]): string {
+  const tasksList = tasks
+    .map((t) => {
+      let desc = `- [${t.id}] Title: "${t.title}"`
+      if (t.notes) desc += ` | Notes: "${t.notes}"`
+      else desc += ` | Notes: (empty)`
+      return desc
+    })
+    .join('\n')
+
+  return `Improve these task titles and notes:\n\n${tasksList}\n\nReturn JSON only.`
+}
+
+export async function renameTasks(request: {
+  tasks: RenameTask[]
+}): Promise<{ taskId: string; newTitle: string; newNotes: string }[]> {
+  const prompt = buildRenamePrompt(request.tasks)
+  const responseText = await callAiWithPrompt(RENAME_SYSTEM_PROMPT, prompt)
+  let cleaned = responseText.trim()
+  if (cleaned.startsWith('```')) {
+    cleaned = cleaned.replace(/^```(?:json)?\s*/, '').replace(/```\s*$/, '')
+  }
+  const data = JSON.parse(cleaned)
+  return (data.renames || []).map((r: any) => ({
+    taskId: r.taskId || '',
+    newTitle: r.newTitle || '',
+    newNotes: r.newNotes || ''
+  }))
+}
+
 export async function generatePlan(request: PlanRequest): Promise<DayPlan> {
   const settings = getSettings()
   const apiKey = getDecryptedApiKey()
