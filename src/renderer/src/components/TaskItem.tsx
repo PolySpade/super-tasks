@@ -1,5 +1,6 @@
-import { Calendar, Trash2, FileText, Plus, Timer } from 'lucide-react'
-import { Task } from '../types'
+import { Calendar, Trash2, FileText, Plus, Timer, Star, Clock, CalendarPlus } from 'lucide-react'
+import { Task, EnergyLevel } from '../types'
+import { EnergyBadge } from './EnergyBadge'
 
 interface TaskItemProps {
   task: Task
@@ -9,6 +10,11 @@ interface TaskItemProps {
   onSelect: (task: Task) => void
   onAddSubtask: (parentId: string) => void
   onFocusStart?: (task: Task) => void
+  isMIT?: boolean
+  onToggleMIT?: (taskId: string) => void
+  timeBoxMinutes?: number
+  energyLevel?: EnergyLevel
+  onSchedule?: (task: Task) => void
 }
 
 function formatDueDate(due: string): string {
@@ -46,7 +52,20 @@ function isDueToday(due: string): boolean {
   return dueDate.getTime() === today.getTime()
 }
 
-export function TaskItem({ task, depth = 0, onToggle, onDelete, onSelect, onAddSubtask, onFocusStart }: TaskItemProps) {
+export function TaskItem({
+  task,
+  depth = 0,
+  onToggle,
+  onDelete,
+  onSelect,
+  onAddSubtask,
+  onFocusStart,
+  isMIT,
+  onToggleMIT,
+  timeBoxMinutes,
+  energyLevel,
+  onSchedule
+}: TaskItemProps) {
   const isCompleted = task.status === 'completed'
   const overdue = task.due ? isOverdue(task.due, task.status) : false
   const dueToday = task.due ? isDueToday(task.due) : false
@@ -56,10 +75,10 @@ export function TaskItem({ task, depth = 0, onToggle, onDelete, onSelect, onAddS
   return (
     <>
       <div
-        className={`task-item ${isCompleted ? 'completed' : ''} ${isSubtask ? 'subtask' : ''}`}
+        className={`task-item ${isCompleted ? 'completed' : ''} ${isSubtask ? 'subtask' : ''} ${isMIT ? 'is-mit' : ''}`}
         style={{ paddingLeft: `${14 + depth * 24}px` }}
         onClick={(e) => {
-          if ((e.target as HTMLElement).closest('.task-checkbox, .delete-btn, .add-subtask-btn, .focus-btn')) return
+          if ((e.target as HTMLElement).closest('.task-checkbox, .delete-btn, .add-subtask-btn, .focus-btn, .mit-toggle-btn, .schedule-btn')) return
           onSelect(task)
         }}
       >
@@ -90,8 +109,39 @@ export function TaskItem({ task, depth = 0, onToggle, onDelete, onSelect, onAddS
                 {task.children!.filter(c => c.status !== 'completed').length}/{task.children!.length}
               </span>
             )}
+            {timeBoxMinutes && (
+              <span className="timebox-badge">
+                <Clock size={10} />
+                {timeBoxMinutes}m
+              </span>
+            )}
+            {energyLevel && <EnergyBadge level={energyLevel} />}
           </div>
         </div>
+        {!isCompleted && onToggleMIT && (
+          <button
+            className={`icon-btn mit-toggle-btn ${isMIT ? 'mit-active' : ''}`}
+            onClick={(e) => {
+              e.stopPropagation()
+              onToggleMIT(task.id)
+            }}
+            title={isMIT ? 'Remove MIT' : 'Mark as MIT'}
+          >
+            <Star size={12} fill={isMIT ? 'currentColor' : 'none'} />
+          </button>
+        )}
+        {!isCompleted && onSchedule && (
+          <button
+            className="icon-btn schedule-btn"
+            onClick={(e) => {
+              e.stopPropagation()
+              onSchedule(task)
+            }}
+            title="Schedule on calendar"
+          >
+            <CalendarPlus size={12} />
+          </button>
+        )}
         {!isCompleted && onFocusStart && (
           <button
             className="icon-btn focus-btn"
@@ -138,6 +188,11 @@ export function TaskItem({ task, depth = 0, onToggle, onDelete, onSelect, onAddS
             onSelect={onSelect}
             onAddSubtask={onAddSubtask}
             onFocusStart={onFocusStart}
+            isMIT={isMIT}
+            onToggleMIT={onToggleMIT}
+            timeBoxMinutes={timeBoxMinutes}
+            energyLevel={energyLevel}
+            onSchedule={onSchedule}
           />
         ))}
     </>

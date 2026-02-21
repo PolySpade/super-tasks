@@ -1,5 +1,6 @@
-import { app } from 'electron'
+import { app, Notification } from 'electron'
 import { electronApp, optimizer } from '@electron-toolkit/utils'
+import Store from 'electron-store'
 import { createWindow, toggleWindow, getWindow, setQuitting } from './window'
 import { createTray, getTray } from './tray'
 import { registerIpcHandlers } from './ipc-handlers'
@@ -49,6 +50,22 @@ if (!gotTheLock) {
         toggleWindow(tray.getBounds())
       }
     }
+
+    // Sunday weekly review reminder
+    const notifStore = new Store({ name: 'weekly-review-notif' })
+    setInterval(() => {
+      const now = new Date()
+      if (now.getDay() === 0 && now.getHours() === 10) {
+        const todayKey = now.toISOString().split('T')[0]
+        if (notifStore.get('lastNotified') !== todayKey) {
+          new Notification({
+            title: 'Weekly Review',
+            body: 'Time to review your week and plan ahead!'
+          }).show()
+          notifStore.set('lastNotified', todayKey)
+        }
+      }
+    }, 60 * 60 * 1000) // Check every hour
   })
 
   // Prevent app from quitting when window is closed - empty handler stops default quit

@@ -1,5 +1,5 @@
 import { Loader2, CheckCircle2 } from 'lucide-react'
-import { Task } from '../types'
+import { Task, EnergyLevel, TaskMetadata } from '../types'
 import { TaskItem } from './TaskItem'
 
 interface TaskListProps {
@@ -10,9 +10,25 @@ interface TaskListProps {
   onSelectTask: (task: Task) => void
   onAddSubtask: (parentId: string) => void
   onFocusStart?: (task: Task) => void
+  mits?: string[]
+  onToggleMIT?: (taskId: string) => void
+  metadataMap?: Record<string, TaskMetadata>
+  onSchedule?: (task: Task) => void
 }
 
-export function TaskList({ tasks, loading, onToggle, onDelete, onSelectTask, onAddSubtask, onFocusStart }: TaskListProps) {
+export function TaskList({
+  tasks,
+  loading,
+  onToggle,
+  onDelete,
+  onSelectTask,
+  onAddSubtask,
+  onFocusStart,
+  mits,
+  onToggleMIT,
+  metadataMap,
+  onSchedule
+}: TaskListProps) {
   if (loading) {
     return (
       <div className="task-list-empty">
@@ -47,6 +63,11 @@ export function TaskList({ tasks, loading, onToggle, onDelete, onSelectTask, onA
           onSelect={onSelectTask}
           onAddSubtask={onAddSubtask}
           onFocusStart={onFocusStart}
+          isMIT={mits?.includes(task.id)}
+          onToggleMIT={onToggleMIT}
+          timeBoxMinutes={metadataMap?.[task.id]?.timeBoxMinutes}
+          energyLevel={metadataMap?.[task.id]?.energyLevel}
+          onSchedule={onSchedule}
         />
       ))}
       {completed.length > 0 && (

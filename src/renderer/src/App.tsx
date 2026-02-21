@@ -2,6 +2,8 @@ import { useState, useEffect, useMemo } from 'react'
 import { useAuth } from './hooks/useAuth'
 import { useTaskLists } from './hooks/useTaskLists'
 import { useTasks } from './hooks/useTasks'
+import { useTaskMetadata } from './hooks/useTaskMetadata'
+import { useMITs } from './hooks/useMITs'
 import { Task } from './types'
 import { LoginScreen } from './components/LoginScreen'
 import { TitleBar } from './components/TitleBar'
@@ -16,20 +18,20 @@ import { Dashboard } from './components/Dashboard'
 import { DeadlineList } from './components/DeadlineList'
 import { FocusMode } from './components/FocusMode'
 import { CalendarView } from './components/CalendarView'
-import { LayoutDashboard, ListTodo, CalendarDays, CalendarClock } from 'lucide-react'
+import { TimerView } from './components/TimerView'
+import { WeeklyReview } from './components/WeeklyReview'
+import { LayoutDashboard, ListTodo, CalendarDays, CalendarClock, Timer } from 'lucide-react'
 
-type Tab = 'dashboard' | 'tasks' | 'calendar' | 'plan'
-type View = 'dashboard' | 'tasks' | 'settings' | 'detail' | 'plan' | 'calendar' | 'deadlines'
+type Tab = 'dashboard' | 'tasks' | 'calendar' | 'plan' | 'timer'
+type View = 'dashboard' | 'tasks' | 'settings' | 'detail' | 'plan' | 'calendar' | 'deadlines' | 'timer' | 'weekly-review'
 
 // Check if we're in calendar window mode
 const isCalendarWindow = window.location.search.includes('view=calendar')
 
 export default function App() {
-  // If this is the calendar window, render CalendarView full-screen
   if (isCalendarWindow) {
     return <CalendarView />
   }
-
   return <TrayApp />
 }
 
@@ -50,12 +52,17 @@ function TrayApp() {
     clearError
   } = useTasks(signedIn, selectedListId)
 
+  const { metadataMap, setMetadata } = useTaskMetadata()
+  const { mits, setMITs, addMIT, removeMIT, isMIT } = useMITs()
+
   const [tab, setTab] = useState<Tab>('dashboard')
   const [view, setView] = useState<View>('dashboard')
   const [selectedTask, setSelectedTask] = useState<Task | null>(null)
   const [subtaskParentId, setSubtaskParentId] = useState<string | undefined>()
   const [subtaskParentTitle, setSubtaskParentTitle] = useState<string | undefined>()
   const [focusTask, setFocusTask] = useState<Task | null>(null)
+  const [focusMode, setFocusMode] = useState<'pomodoro' | 'timebox'>('pomodoro')
+  const [focusTimeBox, setFocusTimeBox] = useState<number | undefined>()
 
   const error = listsError || tasksError
 
@@ -65,7 +72,7 @@ function TrayApp() {
     return { total, completed }
   }, [allTasks])
 
-  // Keep selectedTask in sync with tasks array (search tree)
+  // Keep selectedTask in sync with tasks array
   useEffect(() => {
     if (selectedTask) {
       const findTask = (list: Task[]): Task | undefined => {
@@ -86,11 +93,11 @@ function TrayApp() {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        if (focusTask) return // Let FocusMode handle its own escape
+        if (focusTask) return
         if (subtaskParentId) {
           setSubtaskParentId(undefined)
           setSubtaskParentTitle(undefined)
-        } else if (view === 'detail' || view === 'settings' || view === 'deadlines') {
+        } else if (view === 'detail' || view === 'settings' || view === 'deadlines' || view === 'weekly-review') {
           setView(tab === 'calendar' ? 'dashboard' : tab)
           setSelectedTask(null)
         } else {
@@ -160,12 +167,28 @@ function TrayApp() {
   }
 
   const handleFocusStart = (task: Task) => {
+    const meta = metadataMap[task.id]
+    if (meta?.timeBoxMinutes) {
+      setFocusMode('timebox')
+      setFocusTimeBox(meta.timeBoxMinutes)
+    } else {
+      setFocusMode('pomodoro')
+      setFocusTimeBox(undefined)
+    }
     setFocusTask(task)
   }
 
   const handleFocusExit = (_summary: { totalMinutes: number; sessionsCompleted: number }) => {
     setFocusTask(null)
     refreshTasks()
+  }
+
+  const handleToggleMIT = (taskId: string) => {
+    if (isMIT(taskId)) {
+      removeMIT(taskId)
+    } else {
+      addMIT(taskId)
+    }
   }
 
   const getTitle = () => {
@@ -180,6 +203,10 @@ function TrayApp() {
         return 'Google Tasks'
       case 'deadlines':
         return 'Deadlines'
+      case 'timer':
+        return 'Focus Timer'
+      case 'weekly-review':
+        return 'Weekly Review'
       default:
         return 'Google Tasks'
     }
@@ -199,11 +226,11 @@ function TrayApp() {
       <TitleBar
         onSettingsClick={() => setView(view === 'settings' ? (tab === 'calendar' ? 'dashboard' : tab) : 'settings')}
         onClose={handleClose}
-        showBack={view === 'detail' || view === 'settings' || view === 'deadlines'}
+        showBack={view === 'detail' || view === 'settings' || view === 'deadlines' || view === 'weekly-review'}
         onBack={
           view === 'detail'
             ? handleBackFromDetail
-            : view === 'deadlines'
+            : view === 'deadlines' || view === 'weekly-review'
               ? () => setView('dashboard')
               : () => setView(tab === 'calendar' ? 'dashboard' : tab)
         }
@@ -222,6 +249,8 @@ function TrayApp() {
           onDelete={removeTask}
           onToggle={toggleComplete}
           onFocusStart={handleFocusStart}
+          metadata={metadataMap[selectedTask.id]}
+          onSetMetadata={setMetadata}
         />
       ) : view === 'plan' ? (
         <PlanView
@@ -234,6 +263,16 @@ function TrayApp() {
           signedIn={signedIn}
           taskLists={taskLists}
           onBack={() => setView('dashboard')}
+        />
+      ) : view === 'timer' ? (
+        <TimerView allTasks={allTasks} />
+      ) : view === 'weekly-review' ? (
+        <WeeklyReview
+          signedIn={signedIn}
+          taskLists={taskLists}
+          onBack={() => setView('dashboard')}
+          onSelectTask={handleSelectTask}
+          onUpdateTask={updateTask}
         />
       ) : view === 'dashboard' ? (
         <>
@@ -249,7 +288,12 @@ function TrayApp() {
               taskLists={taskLists}
               onNavigateToPlan={() => handleTabChange('plan')}
               onNavigateToDeadlines={() => setView('deadlines')}
+              onNavigateToWeeklyReview={() => setView('weekly-review')}
               onSelectTask={handleSelectTask}
+              mits={mits}
+              onSetMITs={setMITs}
+              allTasks={allTasks}
+              metadataMap={metadataMap}
             />
           )}
         </>
@@ -278,6 +322,9 @@ function TrayApp() {
                 onSelectTask={handleSelectTask}
                 onAddSubtask={handleAddSubtask}
                 onFocusStart={handleFocusStart}
+                mits={mits}
+                onToggleMIT={handleToggleMIT}
+                metadataMap={metadataMap}
               />
               <AddTaskForm
                 onAdd={addTask}
@@ -291,7 +338,7 @@ function TrayApp() {
       )}
 
       {/* Bottom tab bar */}
-      {signedIn && !authLoading && view !== 'detail' && view !== 'settings' && view !== 'deadlines' && (
+      {signedIn && !authLoading && view !== 'detail' && view !== 'settings' && view !== 'deadlines' && view !== 'weekly-review' && (
         <div className="tab-bar">
           <button
             className={`tab-bar-btn ${tab === 'dashboard' ? 'active' : ''}`}
@@ -306,6 +353,13 @@ function TrayApp() {
           >
             <ListTodo size={16} />
             <span>Tasks</span>
+          </button>
+          <button
+            className={`tab-bar-btn ${tab === 'timer' ? 'active' : ''}`}
+            onClick={() => handleTabChange('timer')}
+          >
+            <Timer size={16} />
+            <span>Timer</span>
           </button>
           <button
             className={`tab-bar-btn ${tab === 'calendar' ? 'active' : ''}`}
@@ -329,6 +383,8 @@ function TrayApp() {
         <FocusMode
           task={focusTask}
           onExit={handleFocusExit}
+          mode={focusMode}
+          timeBoxMinutes={focusTimeBox}
         />
       )}
     </div>

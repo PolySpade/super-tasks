@@ -89,6 +89,13 @@ export function getStats(): FocusStats {
   return { todaySessions: todaySessions.length, todayMinutes, streak, lastSessionDate }
 }
 
+export function getWeekSessions(): FocusSession[] {
+  const cutoff = new Date()
+  cutoff.setDate(cutoff.getDate() - 7)
+  const cutoffStr = cutoff.toISOString().split('T')[0]
+  return getSessions().filter((s) => s.completed && s.startTime.split('T')[0] >= cutoffStr)
+}
+
 export function getPomodoroSettings(): PomodoroConfig {
   const saved = store.get('pomodoroSettings') as Partial<PomodoroConfig> | undefined
   return { ...POMODORO_DEFAULTS, ...saved }

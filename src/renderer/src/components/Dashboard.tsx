@@ -1,6 +1,6 @@
-import { useState } from 'react'
-import { Calendar, Sparkles, Plus, Wand2 } from 'lucide-react'
-import { Task, TaskList } from '../types'
+import { useState, useMemo } from 'react'
+import { Calendar, Sparkles, Plus, Wand2, ClipboardList, Zap } from 'lucide-react'
+import { Task, TaskList, EnergyLevel, TaskMetadata } from '../types'
 import { useDashboardData } from '../hooks/useDashboardData'
 import { useDeadlines } from '../hooks/useDeadlines'
 import { DashboardStats } from './DashboardStats'
@@ -9,13 +9,29 @@ import { RecentActivity } from './RecentActivity'
 import { DeadlinePreview } from './DeadlinePreview'
 import { QuickAddModal } from './QuickAddModal'
 import { AIRenameModal } from './AIRenameModal'
+import { MITSection } from './MITSection'
+import { EnergyBadge } from './EnergyBadge'
 
 interface DashboardProps {
   signedIn: boolean
   taskLists: TaskList[]
   onNavigateToPlan: () => void
   onNavigateToDeadlines: () => void
+  onNavigateToWeeklyReview: () => void
   onSelectTask: (task: Task) => void
+  mits: string[]
+  onSetMITs: (taskIds: string[]) => void
+  allTasks: Task[]
+  metadataMap: Record<string, TaskMetadata>
+}
+
+function flattenTasks(tasks: Task[]): Task[] {
+  const flat: Task[] = []
+  for (const t of tasks) {
+    flat.push(t)
+    if (t.children) flat.push(...flattenTasks(t.children))
+  }
+  return flat
 }
 
 export function Dashboard({
@@ -23,7 +39,12 @@ export function Dashboard({
   taskLists,
   onNavigateToPlan,
   onNavigateToDeadlines,
-  onSelectTask
+  onNavigateToWeeklyReview,
+  onSelectTask,
+  mits,
+  onSetMITs,
+  allTasks,
+  metadataMap
 }: DashboardProps) {
   const { stats, recentCompleted, weeklyByList, loading, refresh } = useDashboardData(
     signedIn,
@@ -44,6 +65,26 @@ export function Dashboard({
     day: 'numeric'
   })
 
+  // Suggested task based on energy and time of day
+  const suggestedTask = useMemo(() => {
+    const hour = new Date().getHours()
+    const isAfternoon = hour >= 13
+    const targetEnergy: EnergyLevel = isAfternoon ? 'low' : 'high'
+    const flat = flattenTasks(allTasks).filter((t) => t.status === 'needsAction')
+
+    // Try energy-matched task
+    const energyMatch = flat.find((t) => metadataMap[t.id]?.energyLevel === targetEnergy)
+    if (energyMatch) return { task: energyMatch, reason: isAfternoon ? 'Low energy — ease into the afternoon' : 'High energy — tackle this while fresh' }
+
+    // Fallback: first MIT
+    if (mits.length > 0) {
+      const mitTask = flat.find((t) => t.id === mits[0])
+      if (mitTask) return { task: mitTask, reason: 'Your top priority for today' }
+    }
+
+    return null
+  }, [allTasks, metadataMap, mits])
+
   return (
     <div className="dashboard">
       <div className="dashboard-header">
@@ -59,6 +100,10 @@ export function Dashboard({
           <button className="dashboard-action-btn" onClick={() => setShowRename(true)}>
             <Wand2 size={14} />
             AI Rename
+          </button>
+          <button className="dashboard-action-btn" onClick={onNavigateToWeeklyReview}>
+            <ClipboardList size={14} />
+            Weekly Review
           </button>
           <button className="dashboard-action-btn dashboard-action-btn-primary" onClick={onNavigateToPlan}>
             <Sparkles size={14} />
@@ -80,6 +125,30 @@ export function Dashboard({
             completed={stats.completedToday}
             upcomingEvents={deadlines.filter((d) => d.source === 'event').length}
           />
+
+          <MITSection
+            mits={mits}
+            allTasks={allTasks}
+            onSetMITs={onSetMITs}
+            onSelectTask={onSelectTask}
+          />
+
+          {suggestedTask && (
+            <div
+              className="suggested-task-card"
+              onClick={() => onSelectTask(suggestedTask.task)}
+            >
+              <Zap size={14} className="suggested-icon" />
+              <div className="suggested-content">
+                <span className="suggested-label">Suggested Now</span>
+                <span className="suggested-title">{suggestedTask.task.title}</span>
+                <span className="suggested-reason">{suggestedTask.reason}</span>
+              </div>
+              {metadataMap[suggestedTask.task.id]?.energyLevel && (
+                <EnergyBadge level={metadataMap[suggestedTask.task.id].energyLevel!} />
+              )}
+            </div>
+          )}
 
           <WeeklyChart data={weeklyByList} />
 

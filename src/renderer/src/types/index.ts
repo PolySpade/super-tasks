@@ -108,6 +108,13 @@ export interface Deadline {
   children?: Task[]
 }
 
+export type EnergyLevel = 'high' | 'medium' | 'low'
+
+export interface TaskMetadata {
+  energyLevel?: EnergyLevel
+  timeBoxMinutes?: number
+}
+
 export interface GeneratedSubtask {
   title: string
   estimatedMinutes: number

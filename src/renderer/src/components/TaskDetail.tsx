@@ -1,6 +1,21 @@
-import { useState } from 'react'
-import { ArrowLeft, Calendar, Trash2, X, Save, Timer } from 'lucide-react'
-import { Task } from '../types'
+import { useState, useEffect } from 'react'
+import { ArrowLeft, Calendar, Trash2, X, Save, Timer, Clock, Zap } from 'lucide-react'
+import { Task, EnergyLevel, TaskMetadata } from '../types'
+
+const TIME_BOX_OPTIONS = [
+  { label: 'None', value: 0 },
+  { label: '15 min', value: 15 },
+  { label: '30 min', value: 30 },
+  { label: '45 min', value: 45 },
+  { label: '60 min', value: 60 },
+  { label: '90 min', value: 90 }
+]
+
+const ENERGY_OPTIONS: { label: string; value: EnergyLevel; color: string }[] = [
+  { label: 'High', value: 'high', color: 'var(--danger)' },
+  { label: 'Med', value: 'medium', color: 'var(--warning)' },
+  { label: 'Low', value: 'low', color: 'var(--success)' }
+]
 
 interface TaskDetailProps {
   task: Task
@@ -9,13 +24,25 @@ interface TaskDetailProps {
   onDelete: (taskId: string) => void
   onToggle: (taskId: string, completed: boolean) => void
   onFocusStart?: (task: Task) => void
+  metadata?: TaskMetadata
+  onSetMetadata?: (taskId: string, partial: Partial<TaskMetadata>) => void
 }
 
-export function TaskDetail({ task, onBack, onUpdate, onDelete, onToggle, onFocusStart }: TaskDetailProps) {
+export function TaskDetail({ task, onBack, onUpdate, onDelete, onToggle, onFocusStart, metadata, onSetMetadata }: TaskDetailProps) {
   const [title, setTitle] = useState(task.title)
   const [notes, setNotes] = useState(task.notes || '')
   const [due, setDue] = useState(task.due ? task.due.split('T')[0] : '')
+  const [timeBox, setTimeBox] = useState(metadata?.timeBoxMinutes || 0)
+  const [energy, setEnergy] = useState<EnergyLevel | undefined>(metadata?.energyLevel)
   const isCompleted = task.status === 'completed'
+
+  useEffect(() => {
+    setTitle(task.title)
+    setNotes(task.notes || '')
+    setDue(task.due ? task.due.split('T')[0] : '')
+    setTimeBox(metadata?.timeBoxMinutes || 0)
+    setEnergy(metadata?.energyLevel)
+  }, [task.id])
 
   const hasChanges =
     title !== task.title ||
@@ -38,6 +65,17 @@ export function TaskDetail({ task, onBack, onUpdate, onDelete, onToggle, onFocus
   const handleDelete = () => {
     onDelete(task.id)
     onBack()
+  }
+
+  const handleTimeBoxChange = (value: number) => {
+    setTimeBox(value)
+    onSetMetadata?.(task.id, { timeBoxMinutes: value || undefined })
+  }
+
+  const handleEnergyChange = (value: EnergyLevel) => {
+    const newVal = energy === value ? undefined : value
+    setEnergy(newVal)
+    onSetMetadata?.(task.id, { energyLevel: newVal })
   }
 
   return (
@@ -100,6 +138,48 @@ export function TaskDetail({ task, onBack, onUpdate, onDelete, onToggle, onFocus
         </div>
 
         <div className="task-detail-field">
+          <label>
+            <Clock size={13} />
+            Time Box
+          </label>
+          <div className="task-detail-timebox">
+            {TIME_BOX_OPTIONS.map((opt) => (
+              <button
+                key={opt.value}
+                className={`timebox-option ${timeBox === opt.value ? 'active' : ''}`}
+                onClick={() => handleTimeBoxChange(opt.value)}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="task-detail-field">
+          <label>
+            <Zap size={13} />
+            Energy Level
+          </label>
+          <div className="task-detail-energy">
+            {ENERGY_OPTIONS.map((opt) => (
+              <button
+                key={opt.value}
+                className={`energy-option ${energy === opt.value ? 'active' : ''}`}
+                style={{
+                  '--energy-color': opt.color,
+                  borderColor: energy === opt.value ? opt.color : undefined,
+                  color: energy === opt.value ? opt.color : undefined
+                } as React.CSSProperties}
+                onClick={() => handleEnergyChange(opt.value)}
+              >
+                <span className="energy-option-dot" style={{ background: opt.color }} />
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="task-detail-field">
           <label>Notes</label>
           <textarea
             className="task-detail-notes"
@@ -120,7 +200,7 @@ export function TaskDetail({ task, onBack, onUpdate, onDelete, onToggle, onFocus
         {!isCompleted && onFocusStart && (
           <button className="start-focus-btn" onClick={() => onFocusStart(task)}>
             <Timer size={14} />
-            Start Focus Session
+            {timeBox > 0 ? `Start ${timeBox}min Time Box` : 'Start Focus Session'}
           </button>
         )}
       </div>

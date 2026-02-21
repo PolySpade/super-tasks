@@ -40,6 +40,8 @@ interface PlanRequest {
   workingHours: { start: string; end: string }
   lunchBreak: { start: string; end: string }
   breakMinutes: number
+  mitTaskIds?: string[]
+  taskMetadata?: Record<string, { energyLevel?: 'high' | 'medium' | 'low'; timeBoxMinutes?: number }>
 }
 
 const PLANNER_SYSTEM_PROMPT = `You are a day planner AI. Given a list of tasks and existing calendar events, create an optimal daily schedule by grouping related tasks into named contextual blocks.
@@ -49,13 +51,16 @@ Rules:
 - NEVER schedule over the lunch break period — keep it free
 - Group tasks that share similar context into named blocks (e.g. "Communication", "Deep Work", "Admin", "Creative", "Review", "Planning")
 - Each block should contain 1-5 tasks; a solo task gets its own block
-- Schedule high-effort blocks (Deep Work, Creative) earlier when energy is highest
 - Include breaks BETWEEN blocks, not between tasks within a block
 - Prioritize tasks with closer due dates
 - Tasks without due dates should still be scheduled sensibly
 - Keep all blocks within the specified working hours
-- Estimate each task's duration based on title and notes (default 30 minutes)
+- Estimate each task's duration based on title and notes (default 30 minutes). If a task has a timebox duration, use that exact duration.
 - Each block's start/end should cover the total estimated time of its tasks
+- MIT (Most Important Task) tasks MUST be scheduled first, before any other tasks. MIT #1 is the "frog" — schedule it as the very first task block.
+- Tasks marked with [energy: high] should be scheduled in morning peak hours when energy is highest
+- Tasks marked with [energy: low] should be scheduled after lunch when energy naturally dips
+- Tasks marked with [energy: medium] are flexible and can fill remaining slots
 - Return ONLY valid JSON, no markdown fences or extra text
 
 Return JSON in this exact format:
@@ -83,9 +88,17 @@ function buildPrompt(request: PlanRequest): string {
       }).join('\n')
     : 'No existing events'
 
+  const mitSet = new Set(request.mitTaskIds || [])
+  const meta = request.taskMetadata || {}
+
   const tasksList = request.tasks.length > 0
     ? request.tasks.map((t) => {
-        let desc = `- [${t.id}] "${t.title}"`
+        let desc = `- [${t.id}]`
+        if (mitSet.has(t.id)) desc += ' [MIT]'
+        const tm = meta[t.id]
+        if (tm?.energyLevel) desc += ` [energy: ${tm.energyLevel}]`
+        if (tm?.timeBoxMinutes) desc += ` [timebox: ${tm.timeBoxMinutes}min]`
+        desc += ` "${t.title}"`
         if (t.due) desc += ` (due: ${t.due})`
         if (t.notes) desc += ` — Notes: ${t.notes}`
         return desc

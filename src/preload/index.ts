@@ -80,7 +80,21 @@ const api = {
   // Window
   hideWindow: () => ipcRenderer.invoke('window:hide'),
   getAlwaysOnTop: () => ipcRenderer.invoke('window:get-always-on-top'),
-  setAlwaysOnTop: (enabled: boolean) => ipcRenderer.invoke('window:set-always-on-top', enabled)
+  setAlwaysOnTop: (enabled: boolean) => ipcRenderer.invoke('window:set-always-on-top', enabled),
+
+  // Task metadata
+  getTaskMetadata: (taskId: string) => ipcRenderer.invoke('task-meta:get', taskId),
+  setTaskMetadata: (taskId: string, partial: any) => ipcRenderer.invoke('task-meta:set', taskId, partial),
+  getAllTaskMetadata: () => ipcRenderer.invoke('task-meta:get-all'),
+  deleteTaskMetadata: (taskId: string) => ipcRenderer.invoke('task-meta:delete', taskId),
+
+  // MIT tasks
+  getMITs: (date: string) => ipcRenderer.invoke('mit:get', date),
+  setMITs: (date: string, taskIds: string[]) => ipcRenderer.invoke('mit:set', date, taskIds),
+  clearMITs: (date: string) => ipcRenderer.invoke('mit:clear', date),
+
+  // Focus week sessions
+  getFocusWeekSessions: () => ipcRenderer.invoke('focus:get-week-sessions')
 }
 
 contextBridge.exposeInMainWorld('api', api)

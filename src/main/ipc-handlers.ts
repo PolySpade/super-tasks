@@ -13,11 +13,19 @@ import { getCalendars, getEvents, createEvent, updateEvent, deleteEvent } from '
 import { getSettings, updateSettings } from './settings-store'
 import { generatePlan, validateApiKey, generateSubtasks, workBackwards, renameTasks } from './ai-planner'
 import { getStartupEnabled, setStartupEnabled } from './startup'
+import {
+  getTaskMetadata,
+  setTaskMetadata,
+  getAllTaskMetadata,
+  deleteTaskMetadata
+} from './task-metadata-store'
+import { getMITs, setMITs, clearMITs } from './mit-store'
 import { hideWindow, toggleCalendarWindow, setAlwaysOnTop, getAlwaysOnTop } from './window'
 import {
   logSession,
   getTodaySessions,
   getStats,
+  getWeekSessions,
   getPomodoroSettings,
   setPomodoroSettings
 } from './focus-store'
@@ -353,5 +361,79 @@ export function registerIpcHandlers(): void {
   // Notifications
   ipcMain.handle('notify', (_event, title: string, body: string) => {
     new Notification({ title, body }).show()
+  })
+
+  ipcMain.handle('focus:get-week-sessions', () => {
+    try {
+      const sessions = getWeekSessions()
+      return { success: true, data: sessions }
+    } catch (error: any) {
+      return { success: false, error: error.message }
+    }
+  })
+
+  // Task metadata
+  ipcMain.handle('task-meta:get', (_event, taskId: string) => {
+    try {
+      const meta = getTaskMetadata(taskId)
+      return { success: true, data: meta }
+    } catch (error: any) {
+      return { success: false, error: error.message }
+    }
+  })
+
+  ipcMain.handle('task-meta:set', (_event, taskId: string, partial: any) => {
+    try {
+      setTaskMetadata(taskId, partial)
+      return { success: true }
+    } catch (error: any) {
+      return { success: false, error: error.message }
+    }
+  })
+
+  ipcMain.handle('task-meta:get-all', () => {
+    try {
+      const all = getAllTaskMetadata()
+      return { success: true, data: all }
+    } catch (error: any) {
+      return { success: false, error: error.message }
+    }
+  })
+
+  ipcMain.handle('task-meta:delete', (_event, taskId: string) => {
+    try {
+      deleteTaskMetadata(taskId)
+      return { success: true }
+    } catch (error: any) {
+      return { success: false, error: error.message }
+    }
+  })
+
+  // MIT tasks
+  ipcMain.handle('mit:get', (_event, date: string) => {
+    try {
+      const mits = getMITs(date)
+      return { success: true, data: mits }
+    } catch (error: any) {
+      return { success: false, error: error.message }
+    }
+  })
+
+  ipcMain.handle('mit:set', (_event, date: string, taskIds: string[]) => {
+    try {
+      setMITs(date, taskIds)
+      return { success: true }
+    } catch (error: any) {
+      return { success: false, error: error.message }
+    }
+  })
+
+  ipcMain.handle('mit:clear', (_event, date: string) => {
+    try {
+      clearMITs(date)
+      return { success: true }
+    } catch (error: any) {
+      return { success: false, error: error.message }
+    }
   })
 }

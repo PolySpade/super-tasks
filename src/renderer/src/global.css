@@ -3621,3 +3621,744 @@ body {
   display: flex;
   gap: 8px;
 }
+
+/* ═══════════════════════════════════════ */
+/* MIT Section                            */
+/* ═══════════════════════════════════════ */
+.mit-section {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+.mit-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.mit-icon {
+  color: var(--warning);
+}
+
+.mit-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  flex: 1;
+}
+
+.mit-pick-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.mit-pick-btn:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.mit-empty {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  padding: 4px 0;
+}
+
+.mit-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.mit-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+
+.mit-item:hover {
+  background: var(--bg-hover);
+}
+
+.mit-frog {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--success-dim);
+  color: var(--success);
+  flex-shrink: 0;
+}
+
+.mit-number {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--accent-dim);
+  color: var(--accent);
+  font-size: 10px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.mit-item-title {
+  flex: 1;
+  font-size: 13px;
+  color: var(--text-primary);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mit-remove-btn {
+  opacity: 0;
+  width: 20px;
+  height: 20px;
+  transition: opacity 0.12s;
+}
+
+.mit-item:hover .mit-remove-btn {
+  opacity: 0.6;
+}
+
+.mit-item:hover .mit-remove-btn:hover {
+  opacity: 1;
+  color: var(--danger) !important;
+}
+
+/* MIT Toggle Button in TaskItem */
+.mit-toggle-btn {
+  opacity: 0;
+  transition: opacity 0.12s, color 0.15s;
+  width: 22px;
+  height: 22px;
+}
+
+.task-item:hover .mit-toggle-btn {
+  opacity: 0.5;
+}
+
+.task-item:hover .mit-toggle-btn:hover {
+  opacity: 1;
+  color: var(--warning) !important;
+}
+
+.mit-toggle-btn.mit-active {
+  opacity: 1;
+  color: var(--warning) !important;
+}
+
+.task-item.is-mit {
+  border-left-color: var(--warning);
+}
+
+/* Schedule Button in TaskItem */
+.schedule-btn {
+  opacity: 0;
+  transition: opacity 0.12s;
+  width: 22px;
+  height: 22px;
+}
+
+.task-item:hover .schedule-btn {
+  opacity: 0.5;
+}
+
+.task-item:hover .schedule-btn:hover {
+  opacity: 1;
+  color: var(--accent) !important;
+}
+
+/* ═══════════════════════════════════════ */
+/* MIT Picker Modal                       */
+/* ═══════════════════════════════════════ */
+.mit-picker {
+  max-width: 320px;
+  max-height: 460px;
+  display: flex;
+  flex-direction: column;
+}
+
+.mit-picker-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--warning);
+  margin-bottom: 12px;
+}
+
+.mit-picker-header h3 {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.mit-picker-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 10px;
+}
+
+.mit-picker-tab {
+  flex: 1;
+  padding: 5px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.mit-picker-tab.active {
+  background: var(--accent-dim);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.mit-picker-list {
+  flex: 1;
+  overflow-y: auto;
+  max-height: 240px;
+  margin: 8px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.mit-picker-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+
+.mit-picker-item:hover {
+  background: var(--bg-hover);
+}
+
+.mit-picker-item.selected {
+  background: var(--accent-dim);
+}
+
+.mit-picker-item.disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.mit-picker-item input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.mit-picker-item-title {
+  font-size: 13px;
+  color: var(--text-primary);
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ═══════════════════════════════════════ */
+/* Time Box Badge                         */
+/* ═══════════════════════════════════════ */
+.timebox-badge {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 10px;
+  color: var(--warning);
+  background: var(--warning-dim);
+  padding: 1px 5px;
+  border-radius: 8px;
+}
+
+/* ═══════════════════════════════════════ */
+/* Energy Badge                           */
+/* ═══════════════════════════════════════ */
+.energy-badge {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* ═══════════════════════════════════════ */
+/* Task Detail Extensions                 */
+/* ═══════════════════════════════════════ */
+.task-detail-timebox {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.timebox-option {
+  padding: 4px 10px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.timebox-option:hover {
+  border-color: var(--warning);
+  color: var(--warning);
+}
+
+.timebox-option.active {
+  background: var(--warning-dim);
+  border-color: var(--warning);
+  color: var(--warning);
+  font-weight: 600;
+}
+
+.task-detail-energy {
+  display: flex;
+  gap: 6px;
+}
+
+.energy-option {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 12px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.energy-option:hover {
+  border-color: var(--energy-color);
+  color: var(--energy-color);
+}
+
+.energy-option.active {
+  background: rgba(255, 255, 255, 0.05);
+  font-weight: 600;
+}
+
+.energy-option-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.start-focus-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  padding: 9px;
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.15s;
+  margin-top: 8px;
+}
+
+.start-focus-btn:hover {
+  background: var(--accent-dim);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* ═══════════════════════════════════════ */
+/* Focus Timebox Mode                     */
+/* ═══════════════════════════════════════ */
+.focus-timebox .focus-timer-ring circle:last-child {
+  stroke: var(--warning) !important;
+}
+
+.focus-timebox-done {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 40px 0;
+}
+
+.focus-timebox-done-text {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--warning);
+  letter-spacing: 2px;
+}
+
+.focus-timebox-done-sub {
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+/* ═══════════════════════════════════════ */
+/* Suggested Task Card                    */
+/* ═══════════════════════════════════════ */
+.suggested-task-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+
+.suggested-task-card:hover {
+  background: var(--bg-hover);
+}
+
+.suggested-icon {
+  color: var(--warning);
+  flex-shrink: 0;
+}
+
+.suggested-content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.suggested-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--warning);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.suggested-title {
+  font-size: 13px;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.suggested-reason {
+  font-size: 11px;
+  color: var(--text-tertiary);
+}
+
+/* ═══════════════════════════════════════ */
+/* Timer View                             */
+/* ═══════════════════════════════════════ */
+.timer-view {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow-y: auto;
+  padding: 16px;
+}
+
+.timer-view-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  max-width: 280px;
+}
+
+.timer-task-picker {
+  position: relative;
+  width: 100%;
+}
+
+.timer-task-picker select {
+  width: 100%;
+  padding: 7px 10px;
+  padding-right: 24px;
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 12px;
+  font-family: inherit;
+  appearance: none;
+  outline: none;
+  cursor: pointer;
+}
+
+.timer-task-picker select:focus {
+  border-color: var(--accent);
+}
+
+.timer-task-picker svg {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-tertiary);
+  pointer-events: none;
+}
+
+.timer-stats {
+  display: flex;
+  gap: 20px;
+  padding: 12px 0;
+}
+
+.timer-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.timer-stat-value {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.timer-stat-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* ═══════════════════════════════════════ */
+/* Weekly Review                          */
+/* ═══════════════════════════════════════ */
+.weekly-review {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 14px;
+}
+
+.weekly-review::-webkit-scrollbar {
+  width: 5px;
+}
+
+.weekly-review::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.weekly-review::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}
+
+.weekly-review-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.weekly-summary {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px;
+}
+
+.weekly-summary-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 12px;
+}
+
+.weekly-summary-stats {
+  display: flex;
+  gap: 12px;
+}
+
+.weekly-summary-stat {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 8px;
+  background: var(--bg-tertiary);
+  border-radius: 6px;
+}
+
+.stat-icon-success { color: var(--success); }
+.stat-icon-accent { color: var(--accent); }
+.stat-icon-warning { color: var(--warning); }
+
+.weekly-stat-value {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.weekly-stat-label {
+  font-size: 10px;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.weekly-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.weekly-section-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--border);
+}
+
+.weekly-empty {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  padding: 8px 0;
+}
+
+.weekly-day-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 4px;
+}
+
+.weekly-day-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  padding: 2px 0;
+}
+
+.weekly-task-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: background 0.12s;
+}
+
+.weekly-task-item:hover {
+  background: var(--bg-hover);
+}
+
+.weekly-carried {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.weekly-carried-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.weekly-reschedule-btn {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 8px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-secondary);
+  font-size: 10px;
+  font-family: inherit;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.15s;
+}
+
+.weekly-reschedule-btn:hover {
+  background: var(--accent-dim);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.weekly-bulk-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  width: 100%;
+  padding: 8px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.15s;
+  margin-top: 4px;
+}
+
+.weekly-bulk-btn:hover {
+  background: var(--accent-dim);
+  border-color: var(--accent);
+  color: var(--accent);
+}
