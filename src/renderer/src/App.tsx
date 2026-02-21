@@ -10,9 +10,12 @@ import { TaskList } from './components/TaskList'
 import { AddTaskForm } from './components/AddTaskForm'
 import { TaskDetail } from './components/TaskDetail'
 import { SettingsPanel } from './components/SettingsPanel'
+import { PlanView } from './components/PlanView'
 import { ErrorBanner } from './components/ErrorBanner'
+import { ListTodo, CalendarClock } from 'lucide-react'
 
-type View = 'tasks' | 'settings' | 'detail'
+type Tab = 'tasks' | 'plan'
+type View = 'tasks' | 'settings' | 'detail' | 'plan'
 
 export default function App() {
   const { signedIn, loading: authLoading, signIn, signOut } = useAuth()
@@ -31,6 +34,7 @@ export default function App() {
     clearError
   } = useTasks(signedIn, selectedListId)
 
+  const [tab, setTab] = useState<Tab>('tasks')
   const [view, setView] = useState<View>('tasks')
   const [selectedTask, setSelectedTask] = useState<Task | null>(null)
   const [subtaskParentId, setSubtaskParentId] = useState<string | undefined>()
@@ -68,8 +72,8 @@ export default function App() {
         if (subtaskParentId) {
           setSubtaskParentId(undefined)
           setSubtaskParentTitle(undefined)
-        } else if (view !== 'tasks') {
-          setView('tasks')
+        } else if (view !== 'tasks' && view !== 'plan') {
+          setView(tab)
           setSelectedTask(null)
         } else {
           window.api.hideWindow()
@@ -78,13 +82,20 @@ export default function App() {
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [view, subtaskParentId])
+  }, [view, tab, subtaskParentId])
+
+  const handleTabChange = (newTab: Tab) => {
+    setTab(newTab)
+    setView(newTab)
+    setSelectedTask(null)
+  }
 
   const handleClose = () => window.api.hideWindow()
 
   const handleSignOut = async () => {
     await signOut()
     setView('tasks')
+    setTab('tasks')
   }
 
   const handleRefresh = () => {
@@ -98,12 +109,11 @@ export default function App() {
   }
 
   const handleBackFromDetail = () => {
-    setView('tasks')
+    setView(tab)
     setSelectedTask(null)
   }
 
   const handleAddSubtask = (parentId: string) => {
-    // Find parent title from the tree
     const findTitle = (list: Task[]): string | undefined => {
       for (const t of list) {
         if (t.id === parentId) return t.title
@@ -123,12 +133,18 @@ export default function App() {
     setSubtaskParentTitle(undefined)
   }
 
+  const handleOpenSettings = () => {
+    setView('settings')
+  }
+
   const getTitle = () => {
     switch (view) {
       case 'settings':
         return 'Settings'
       case 'detail':
         return 'Task Details'
+      case 'plan':
+        return 'Day Planner'
       default:
         return 'Google Tasks'
     }
@@ -146,10 +162,10 @@ export default function App() {
   return (
     <div className="app">
       <TitleBar
-        onSettingsClick={() => setView(view === 'settings' ? 'tasks' : 'settings')}
+        onSettingsClick={() => setView(view === 'settings' ? tab : 'settings')}
         onClose={handleClose}
-        showBack={view !== 'tasks'}
-        onBack={view === 'detail' ? handleBackFromDetail : () => setView('tasks')}
+        showBack={view === 'detail' || view === 'settings'}
+        onBack={view === 'detail' ? handleBackFromDetail : () => setView(tab)}
         title={getTitle()}
       />
 
@@ -164,6 +180,12 @@ export default function App() {
           onUpdate={updateTask}
           onDelete={removeTask}
           onToggle={toggleComplete}
+        />
+      ) : view === 'plan' ? (
+        <PlanView
+          signedIn={signedIn}
+          taskLists={taskLists}
+          onOpenSettings={handleOpenSettings}
         />
       ) : (
         <>
@@ -199,6 +221,26 @@ export default function App() {
             </>
           )}
         </>
+      )}
+
+      {/* Bottom tab bar */}
+      {signedIn && !authLoading && view !== 'detail' && view !== 'settings' && (
+        <div className="tab-bar">
+          <button
+            className={`tab-bar-btn ${tab === 'tasks' ? 'active' : ''}`}
+            onClick={() => handleTabChange('tasks')}
+          >
+            <ListTodo size={16} />
+            <span>Tasks</span>
+          </button>
+          <button
+            className={`tab-bar-btn ${tab === 'plan' ? 'active' : ''}`}
+            onClick={() => handleTabChange('plan')}
+          >
+            <CalendarClock size={16} />
+            <span>Plan</span>
+          </button>
+        </div>
       )}
     </div>
   )

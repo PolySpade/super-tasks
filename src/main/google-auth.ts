@@ -6,7 +6,10 @@ import { saveTokens, loadTokens, clearTokens } from './token-store'
 
 const REDIRECT_PORT = 52836
 const REDIRECT_URI = `http://localhost:${REDIRECT_PORT}/callback`
-const SCOPES = ['https://www.googleapis.com/auth/tasks']
+const SCOPES = [
+  'https://www.googleapis.com/auth/tasks',
+  'https://www.googleapis.com/auth/calendar.events'
+]
 
 function createOAuth2Client() {
   return new google.auth.OAuth2(

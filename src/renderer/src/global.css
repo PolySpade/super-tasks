@@ -759,6 +759,7 @@ body {
 .settings-panel {
   flex: 1;
   padding: 20px 16px;
+  overflow-y: auto;
 }
 
 .settings-item {
@@ -898,4 +899,681 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
+}
+
+/* ═══════════════════════════════════════ */
+/* Bottom Tab Bar                         */
+/* ═══════════════════════════════════════ */
+.tab-bar {
+  display: flex;
+  height: 36px;
+  border-top: 1px solid var(--border);
+  background: var(--bg-secondary);
+  flex-shrink: 0;
+}
+
+.tab-bar-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: none;
+  background: transparent;
+  color: var(--text-tertiary);
+  font-size: 11px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.tab-bar-btn:hover {
+  color: var(--text-secondary);
+  background: var(--bg-hover);
+}
+
+.tab-bar-btn.active {
+  color: var(--accent);
+}
+
+/* ═══════════════════════════════════════ */
+/* Plan View                              */
+/* ═══════════════════════════════════════ */
+.plan-view {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.plan-view::-webkit-scrollbar {
+  width: 5px;
+}
+
+.plan-view::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.plan-view::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}
+
+.plan-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+/* List Picker */
+.plan-list-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.plan-list-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+
+.plan-list-option:hover {
+  background: var(--bg-hover);
+}
+
+.plan-list-option input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.plan-list-check {
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--border-light);
+  border-radius: 4px;
+  flex-shrink: 0;
+  position: relative;
+  transition: all 0.15s;
+}
+
+.plan-list-option input:checked + .plan-list-check {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.plan-list-option input:checked + .plan-list-check::after {
+  content: '';
+  position: absolute;
+  left: 4px;
+  top: 1px;
+  width: 4px;
+  height: 8px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.plan-list-name {
+  font-size: 13px;
+  color: var(--text-primary);
+}
+
+.plan-generate-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px;
+  background: var(--accent);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.plan-generate-btn:hover:not(:disabled) {
+  background: var(--accent-hover);
+}
+
+.plan-generate-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.plan-section {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.plan-section-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 4px 0;
+}
+
+/* ═══════════════════════════════════════ */
+/* Time Blocks                            */
+/* ═══════════════════════════════════════ */
+.time-block {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px;
+  border-radius: 6px;
+  transition: background 0.12s;
+}
+
+.time-block:hover {
+  background: var(--bg-hover);
+}
+
+.time-block-bar {
+  width: 3px;
+  min-height: 28px;
+  border-radius: 2px;
+  flex-shrink: 0;
+  align-self: stretch;
+}
+
+.time-block-event .time-block-bar {
+  background: var(--accent);
+}
+
+.time-block-task .time-block-bar {
+  background: var(--success);
+}
+
+.time-block-break .time-block-bar {
+  background: var(--text-tertiary);
+}
+
+.time-block-time {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  min-width: 72px;
+  padding-top: 1px;
+}
+
+.time-block-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.time-block-title {
+  font-size: 13px;
+  color: var(--text-primary);
+  line-height: 1.3;
+}
+
+.time-block-reason {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  margin-top: 2px;
+}
+
+.time-block-remove {
+  opacity: 0;
+  transition: opacity 0.12s;
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+}
+
+.time-block:hover .time-block-remove {
+  opacity: 0.6;
+}
+
+.time-block:hover .time-block-remove:hover {
+  opacity: 1;
+  color: var(--danger) !important;
+}
+
+/* ═══════════════════════════════════════ */
+/* Plan States                            */
+/* ═══════════════════════════════════════ */
+.plan-generating {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.plan-summary-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 12px;
+  background: var(--accent-dim);
+  border-radius: 8px;
+  font-size: 12px;
+  color: var(--accent);
+  line-height: 1.4;
+}
+
+.plan-apply-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px;
+  background: var(--success);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.plan-apply-btn:hover {
+  filter: brightness(1.1);
+}
+
+.plan-reset-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 8px;
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 12px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.plan-reset-btn:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+/* Setup Card */
+.plan-setup-card {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  text-align: center;
+  padding: 20px;
+}
+
+.plan-setup-icon {
+  color: var(--warning);
+}
+
+.plan-setup-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.plan-setup-text {
+  font-size: 12px;
+  color: var(--text-secondary);
+  max-width: 240px;
+  line-height: 1.4;
+}
+
+.plan-setup-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: var(--accent);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  margin-top: 4px;
+  transition: all 0.15s;
+}
+
+.plan-setup-btn:hover {
+  background: var(--accent-hover);
+}
+
+/* Done Card */
+.plan-done-card {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  text-align: center;
+}
+
+.plan-done-icon {
+  color: var(--success);
+}
+
+.plan-done-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.plan-done-text {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+/* Error Card */
+.plan-error-card {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  background: var(--error-bg);
+  color: var(--error-text);
+  border-radius: 8px;
+  font-size: 12px;
+}
+
+.plan-error-retry {
+  margin-left: auto;
+  background: transparent;
+  color: var(--error-text);
+  border: 1px solid currentColor;
+  border-radius: 4px;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-family: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s;
+}
+
+.plan-error-retry:hover {
+  background: rgba(239, 68, 68, 0.15);
+}
+
+.plan-loading-events {
+  display: flex;
+  justify-content: center;
+  padding: 20px;
+}
+
+.plan-loading-overlay {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 30px;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+/* ═══════════════════════════════════════ */
+/* Plan Confirm Dialog                    */
+/* ═══════════════════════════════════════ */
+.plan-confirm-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 20px;
+}
+
+.plan-confirm-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px;
+  max-width: 300px;
+  width: 100%;
+}
+
+.plan-confirm-text {
+  font-size: 13px;
+  color: var(--text-primary);
+  text-align: center;
+  margin-bottom: 16px;
+  line-height: 1.4;
+}
+
+.plan-confirm-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.plan-confirm-cancel {
+  flex: 1;
+  padding: 8px;
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.plan-confirm-cancel:hover {
+  background: var(--bg-hover);
+}
+
+.plan-confirm-accept {
+  flex: 1;
+  padding: 8px;
+  background: var(--success);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.plan-confirm-accept:hover {
+  filter: brightness(1.1);
+}
+
+/* ═══════════════════════════════════════ */
+/* Settings Panel Additions               */
+/* ═══════════════════════════════════════ */
+.settings-section-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+
+.settings-item-col {
+  flex-direction: column;
+  align-items: flex-start !important;
+  gap: 6px;
+}
+
+.settings-toggle-group {
+  display: flex;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.settings-toggle-btn {
+  padding: 5px 12px;
+  background: transparent;
+  color: var(--text-secondary);
+  border: none;
+  font-size: 12px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.settings-toggle-btn + .settings-toggle-btn {
+  border-left: 1px solid var(--border);
+}
+
+.settings-toggle-btn.active {
+  background: var(--accent);
+  color: white;
+}
+
+.settings-key-row {
+  display: flex;
+  gap: 6px;
+  width: 100%;
+}
+
+.settings-input {
+  flex: 1;
+  padding: 7px 10px;
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 12px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.settings-input:focus {
+  border-color: var(--accent);
+}
+
+.settings-input::placeholder {
+  color: var(--text-tertiary);
+}
+
+.settings-key-save {
+  padding: 7px 12px;
+  background: var(--accent);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.settings-key-save:hover:not(:disabled) {
+  background: var(--accent-hover);
+}
+
+.settings-key-save:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.settings-key-status {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  padding: 2px 0;
+}
+
+.settings-key-valid {
+  color: var(--success);
+}
+
+.settings-key-invalid {
+  color: var(--danger);
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+
+.settings-hours-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.settings-hours-sep {
+  color: var(--text-tertiary);
+  font-size: 12px;
+}
+
+.settings-time-input {
+  padding: 5px 8px;
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 12px;
+  font-family: inherit;
+  outline: none;
+  color-scheme: dark;
+  width: 72px;
+}
+
+.settings-time-input:focus {
+  border-color: var(--accent);
+}
+
+.settings-select {
+  padding: 5px 8px;
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 12px;
+  font-family: inherit;
+  outline: none;
+  cursor: pointer;
+}
+
+.settings-select:focus {
+  border-color: var(--accent);
+}
+
+.settings-saved-toast {
+  font-size: 11px;
+  color: var(--success);
+  text-align: center;
+  padding: 4px;
 }

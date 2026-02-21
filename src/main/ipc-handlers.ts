@@ -9,6 +9,9 @@ import {
   deleteTask,
   toggleTaskComplete
 } from './google-tasks-api'
+import { getCalendars, getEvents, createEvent, deleteEvent } from './google-calendar-api'
+import { getSettings, updateSettings } from './settings-store'
+import { generatePlan, validateApiKey } from './ai-planner'
 import { getStartupEnabled, setStartupEnabled } from './startup'
 import { hideWindow } from './window'
 
@@ -126,6 +129,98 @@ export function registerIpcHandlers(): void {
       }
     }
   )
+
+  // Calendar
+  ipcMain.handle('calendar:get-calendars', async () => {
+    try {
+      const calendars = await getCalendars()
+      return { success: true, data: calendars }
+    } catch (error: any) {
+      return { success: false, error: error.message }
+    }
+  })
+
+  ipcMain.handle(
+    'calendar:get-events',
+    async (_event, calendarId: string, timeMin: string, timeMax: string) => {
+      try {
+        const events = await getEvents(calendarId, timeMin, timeMax)
+        return { success: true, data: events }
+      } catch (error: any) {
+        return { success: false, error: error.message }
+      }
+    }
+  )
+
+  ipcMain.handle(
+    'calendar:create-event',
+    async (
+      _event,
+      calendarId: string,
+      eventData: { summary: string; start: string; end: string; description?: string }
+    ) => {
+      try {
+        const created = await createEvent(calendarId, eventData)
+        return { success: true, data: created }
+      } catch (error: any) {
+        return { success: false, error: error.message }
+      }
+    }
+  )
+
+  ipcMain.handle(
+    'calendar:delete-event',
+    async (_event, calendarId: string, eventId: string) => {
+      try {
+        await deleteEvent(calendarId, eventId)
+        return { success: true }
+      } catch (error: any) {
+        return { success: false, error: error.message }
+      }
+    }
+  )
+
+  // AI Planner
+  ipcMain.handle(
+    'planner:validate-key',
+    async (_event, provider: 'anthropic' | 'openai' | 'gemini', apiKey: string) => {
+      try {
+        await validateApiKey(provider, apiKey)
+        return { success: true }
+      } catch (error: any) {
+        const msg = error.message || 'Invalid API key'
+        return { success: false, error: msg }
+      }
+    }
+  )
+
+  ipcMain.handle('planner:generate', async (_event, request: any) => {
+    try {
+      const plan = await generatePlan(request)
+      return { success: true, data: plan }
+    } catch (error: any) {
+      return { success: false, error: error.message }
+    }
+  })
+
+  // Planner Settings
+  ipcMain.handle('settings:get-planner', () => {
+    try {
+      const settings = getSettings()
+      return { success: true, data: settings }
+    } catch (error: any) {
+      return { success: false, error: error.message }
+    }
+  })
+
+  ipcMain.handle('settings:set-planner', (_event, partial: any) => {
+    try {
+      const settings = updateSettings(partial)
+      return { success: true, data: settings }
+    } catch (error: any) {
+      return { success: false, error: error.message }
+    }
+  })
 
   // Settings
   ipcMain.handle('settings:get-startup', () => {

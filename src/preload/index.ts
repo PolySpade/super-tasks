@@ -23,6 +23,26 @@ const api = {
   toggleTask: (taskListId: string, taskId: string, completed: boolean) =>
     ipcRenderer.invoke('tasks:toggle', taskListId, taskId, completed),
 
+  // Calendar
+  getCalendars: () => ipcRenderer.invoke('calendar:get-calendars'),
+  getCalendarEvents: (calendarId: string, timeMin: string, timeMax: string) =>
+    ipcRenderer.invoke('calendar:get-events', calendarId, timeMin, timeMax),
+  createCalendarEvent: (
+    calendarId: string,
+    event: { summary: string; start: string; end: string; description?: string }
+  ) => ipcRenderer.invoke('calendar:create-event', calendarId, event),
+  deleteCalendarEvent: (calendarId: string, eventId: string) =>
+    ipcRenderer.invoke('calendar:delete-event', calendarId, eventId),
+
+  // AI Planner
+  validateApiKey: (provider: string, apiKey: string) =>
+    ipcRenderer.invoke('planner:validate-key', provider, apiKey),
+  generatePlan: (request: any) => ipcRenderer.invoke('planner:generate', request),
+
+  // Planner Settings
+  getPlannerSettings: () => ipcRenderer.invoke('settings:get-planner'),
+  setPlannerSettings: (partial: any) => ipcRenderer.invoke('settings:set-planner', partial),
+
   // Settings
   getStartupEnabled: () => ipcRenderer.invoke('settings:get-startup'),
   setStartupEnabled: (enabled: boolean) =>
