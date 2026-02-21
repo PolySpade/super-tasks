@@ -53,6 +53,23 @@ export async function createEvent(
   return res.data
 }
 
+export async function updateEvent(
+  calendarId: string,
+  eventId: string,
+  updates: { start?: string; end?: string; summary?: string; description?: string }
+) {
+  const api = getCalendarApi()
+  const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone
+  const requestBody: any = {}
+  if (updates.summary !== undefined) requestBody.summary = updates.summary
+  if (updates.description !== undefined) requestBody.description = updates.description
+  if (updates.start !== undefined) requestBody.start = { dateTime: updates.start, timeZone }
+  if (updates.end !== undefined) requestBody.end = { dateTime: updates.end, timeZone }
+
+  const res = await api.events.patch({ calendarId, eventId, requestBody })
+  return res.data
+}
+
 export async function deleteEvent(calendarId: string, eventId: string) {
   const api = getCalendarApi()
   await api.events.delete({ calendarId, eventId })

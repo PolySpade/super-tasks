@@ -1,4 +1,4 @@
-import { Calendar, Trash2, FileText, Plus } from 'lucide-react'
+import { Calendar, Trash2, FileText, Plus, Timer } from 'lucide-react'
 import { Task } from '../types'
 
 interface TaskItemProps {
@@ -8,6 +8,7 @@ interface TaskItemProps {
   onDelete: (taskId: string) => void
   onSelect: (task: Task) => void
   onAddSubtask: (parentId: string) => void
+  onFocusStart?: (task: Task) => void
 }
 
 function formatDueDate(due: string): string {
@@ -45,7 +46,7 @@ function isDueToday(due: string): boolean {
   return dueDate.getTime() === today.getTime()
 }
 
-export function TaskItem({ task, depth = 0, onToggle, onDelete, onSelect, onAddSubtask }: TaskItemProps) {
+export function TaskItem({ task, depth = 0, onToggle, onDelete, onSelect, onAddSubtask, onFocusStart }: TaskItemProps) {
   const isCompleted = task.status === 'completed'
   const overdue = task.due ? isOverdue(task.due, task.status) : false
   const dueToday = task.due ? isDueToday(task.due) : false
@@ -58,7 +59,7 @@ export function TaskItem({ task, depth = 0, onToggle, onDelete, onSelect, onAddS
         className={`task-item ${isCompleted ? 'completed' : ''} ${isSubtask ? 'subtask' : ''}`}
         style={{ paddingLeft: `${14 + depth * 24}px` }}
         onClick={(e) => {
-          if ((e.target as HTMLElement).closest('.task-checkbox, .delete-btn, .add-subtask-btn')) return
+          if ((e.target as HTMLElement).closest('.task-checkbox, .delete-btn, .add-subtask-btn, .focus-btn')) return
           onSelect(task)
         }}
       >
@@ -91,6 +92,18 @@ export function TaskItem({ task, depth = 0, onToggle, onDelete, onSelect, onAddS
             )}
           </div>
         </div>
+        {!isCompleted && onFocusStart && (
+          <button
+            className="icon-btn focus-btn"
+            onClick={(e) => {
+              e.stopPropagation()
+              onFocusStart(task)
+            }}
+            title="Start focus session"
+          >
+            <Timer size={12} />
+          </button>
+        )}
         {!isSubtask && (
           <button
             className="icon-btn add-subtask-btn"
@@ -124,6 +137,7 @@ export function TaskItem({ task, depth = 0, onToggle, onDelete, onSelect, onAddS
             onDelete={onDelete}
             onSelect={onSelect}
             onAddSubtask={onAddSubtask}
+            onFocusStart={onFocusStart}
           />
         ))}
     </>

@@ -4,7 +4,8 @@ import { useCalendar } from '../hooks/useCalendar'
 import { usePlanner } from '../hooks/usePlanner'
 import { TimeBlockRow } from './TimeBlock'
 import { PlanConfirm } from './PlanConfirm'
-import { Sparkles, Calendar, CheckCircle, AlertCircle, Settings } from 'lucide-react'
+import { BlockFormModal } from './BlockFormModal'
+import { Sparkles, Calendar, CheckCircle, AlertCircle, Settings, Plus, Hammer } from 'lucide-react'
 
 interface PlanViewProps {
   signedIn: boolean
@@ -14,10 +15,12 @@ interface PlanViewProps {
 
 export function PlanView({ signedIn, taskLists, onOpenSettings }: PlanViewProps) {
   const { events, loading: eventsLoading, refresh: refreshEvents } = useCalendar(signedIn)
-  const { plan, state, error, generatePlan, confirmPlan, rejectBlock, reset } = usePlanner()
+  const { plan, state, error, generatePlan, confirmPlan, rejectBlock, rejectTask, reset, startManualPlan, addBlock, editBlock } = usePlanner()
   const [settings, setSettings] = useState<PlannerSettings | null>(null)
   const [showConfirm, setShowConfirm] = useState(false)
   const [selectedListIds, setSelectedListIds] = useState<Set<string>>(new Set())
+  const [showBlockForm, setShowBlockForm] = useState(false)
+  const [editingBlockIndex, setEditingBlockIndex] = useState<number | null>(null)
 
   useEffect(() => {
     window.api.getPlannerSettings().then((result) => {
@@ -95,11 +98,15 @@ export function PlanView({ signedIn, taskLists, onOpenSettings }: PlanViewProps)
           <AlertCircle size={28} className="plan-setup-icon" />
           <p className="plan-setup-title">AI Planner Setup</p>
           <p className="plan-setup-text">
-            Add your AI API key in Settings to start planning your day.
+            Add your AI API key in Settings to start planning your day, or build a plan manually.
           </p>
           <button className="plan-setup-btn" onClick={onOpenSettings}>
             <Settings size={14} />
             Open Settings
+          </button>
+          <button className="plan-manual-btn" onClick={startManualPlan}>
+            <Hammer size={14} />
+            Build Manually
           </button>
         </div>
       </div>
@@ -169,6 +176,10 @@ export function PlanView({ signedIn, taskLists, onOpenSettings }: PlanViewProps)
                 <Sparkles size={14} />
                 Plan My Day
               </button>
+              <button className="plan-manual-btn" onClick={startManualPlan}>
+                <Hammer size={14} />
+                Build Manually
+              </button>
             </>
           )}
 
@@ -204,18 +215,28 @@ export function PlanView({ signedIn, taskLists, onOpenSettings }: PlanViewProps)
                 </div>
               )}
               <div className="plan-section">
-                <div className="plan-section-label">Suggested Schedule</div>
+                <div className="plan-section-label">Schedule</div>
                 {plan.blocks.map((block, index) => (
                   <TimeBlockRow
                     key={index}
                     start={block.start}
                     end={block.end}
-                    title={block.taskTitle}
+                    title={block.blockName}
                     reason={block.reason}
-                    type="task"
+                    type="context-block"
+                    tasks={block.tasks}
                     onRemove={() => rejectBlock(index)}
+                    onRemoveTask={(taskIndex) => rejectTask(index, taskIndex)}
+                    onEdit={() => setEditingBlockIndex(index)}
                   />
                 ))}
+                <button
+                  className="plan-add-block-btn"
+                  onClick={() => setShowBlockForm(true)}
+                >
+                  <Plus size={14} />
+                  Add Block
+                </button>
               </div>
               {plan.blocks.length > 0 && (
                 <button
@@ -256,6 +277,33 @@ export function PlanView({ signedIn, taskLists, onOpenSettings }: PlanViewProps)
           <div className="spinner" />
           <span>AI is planning your day...</span>
         </div>
+      )}
+
+      {/* Block form modal — add */}
+      {showBlockForm && (
+        <BlockFormModal
+          onClose={() => setShowBlockForm(false)}
+          onSubmit={(data) => {
+            addBlock(data)
+            setShowBlockForm(false)
+          }}
+        />
+      )}
+
+      {/* Block form modal — edit */}
+      {editingBlockIndex !== null && plan && plan.blocks[editingBlockIndex] && (
+        <BlockFormModal
+          initial={{
+            blockName: plan.blocks[editingBlockIndex].blockName,
+            start: plan.blocks[editingBlockIndex].start,
+            end: plan.blocks[editingBlockIndex].end
+          }}
+          onClose={() => setEditingBlockIndex(null)}
+          onSubmit={(data) => {
+            editBlock(editingBlockIndex, data)
+            setEditingBlockIndex(null)
+          }}
+        />
       )}
     </div>
   )

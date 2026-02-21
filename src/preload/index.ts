@@ -48,6 +48,31 @@ const api = {
   setStartupEnabled: (enabled: boolean) =>
     ipcRenderer.invoke('settings:set-startup', enabled),
 
+  // Calendar update
+  updateCalendarEvent: (
+    calendarId: string,
+    eventId: string,
+    updates: { start?: string; end?: string; summary?: string; description?: string }
+  ) => ipcRenderer.invoke('calendar:update-event', calendarId, eventId, updates),
+
+  // Focus sessions
+  logFocusSession: (session: any) => ipcRenderer.invoke('focus:log-session', session),
+  getFocusTodaySessions: () => ipcRenderer.invoke('focus:get-today-sessions'),
+  getFocusStats: () => ipcRenderer.invoke('focus:get-stats'),
+  getPomodoroSettings: () => ipcRenderer.invoke('focus:get-pomodoro-settings'),
+  setPomodoroSettings: (partial: any) => ipcRenderer.invoke('focus:set-pomodoro-settings', partial),
+
+  // AI subtask generation
+  generateSubtasks: (request: { taskTitle: string; taskNotes?: string; deadline: string }) =>
+    ipcRenderer.invoke('planner:generate-subtasks', request),
+  workBackwards: (request: any) => ipcRenderer.invoke('planner:work-backwards', request),
+
+  // Calendar window
+  openCalendarWindow: () => ipcRenderer.invoke('window:open-calendar'),
+
+  // Notifications
+  notify: (title: string, body: string) => ipcRenderer.invoke('notify', title, body),
+
   // Window
   hideWindow: () => ipcRenderer.invoke('window:hide')
 }

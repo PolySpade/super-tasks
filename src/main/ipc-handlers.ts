@@ -1,4 +1,4 @@
-import { ipcMain } from 'electron'
+import { ipcMain, Notification } from 'electron'
 import { signIn, signOut, isSignedIn, restoreSession } from './google-auth'
 import {
   getTaskLists,
@@ -9,11 +9,18 @@ import {
   deleteTask,
   toggleTaskComplete
 } from './google-tasks-api'
-import { getCalendars, getEvents, createEvent, deleteEvent } from './google-calendar-api'
+import { getCalendars, getEvents, createEvent, updateEvent, deleteEvent } from './google-calendar-api'
 import { getSettings, updateSettings } from './settings-store'
-import { generatePlan, validateApiKey } from './ai-planner'
+import { generatePlan, validateApiKey, generateSubtasks, workBackwards } from './ai-planner'
 import { getStartupEnabled, setStartupEnabled } from './startup'
-import { hideWindow } from './window'
+import { hideWindow, toggleCalendarWindow } from './window'
+import {
+  logSession,
+  getTodaySessions,
+  getStats,
+  getPomodoroSettings,
+  setPomodoroSettings
+} from './focus-store'
 
 export function registerIpcHandlers(): void {
   // Auth
@@ -235,5 +242,97 @@ export function registerIpcHandlers(): void {
   // Window
   ipcMain.handle('window:hide', () => {
     hideWindow()
+  })
+
+  ipcMain.handle('window:open-calendar', () => {
+    toggleCalendarWindow()
+  })
+
+  // Calendar update
+  ipcMain.handle(
+    'calendar:update-event',
+    async (
+      _event,
+      calendarId: string,
+      eventId: string,
+      updates: { start?: string; end?: string; summary?: string; description?: string }
+    ) => {
+      try {
+        const updated = await updateEvent(calendarId, eventId, updates)
+        return { success: true, data: updated }
+      } catch (error: any) {
+        return { success: false, error: error.message }
+      }
+    }
+  )
+
+  // Focus sessions
+  ipcMain.handle('focus:log-session', (_event, session: any) => {
+    try {
+      logSession(session)
+      return { success: true }
+    } catch (error: any) {
+      return { success: false, error: error.message }
+    }
+  })
+
+  ipcMain.handle('focus:get-today-sessions', () => {
+    try {
+      const sessions = getTodaySessions()
+      return { success: true, data: sessions }
+    } catch (error: any) {
+      return { success: false, error: error.message }
+    }
+  })
+
+  ipcMain.handle('focus:get-stats', () => {
+    try {
+      const stats = getStats()
+      return { success: true, data: stats }
+    } catch (error: any) {
+      return { success: false, error: error.message }
+    }
+  })
+
+  ipcMain.handle('focus:get-pomodoro-settings', () => {
+    try {
+      const settings = getPomodoroSettings()
+      return { success: true, data: settings }
+    } catch (error: any) {
+      return { success: false, error: error.message }
+    }
+  })
+
+  ipcMain.handle('focus:set-pomodoro-settings', (_event, partial: any) => {
+    try {
+      const settings = setPomodoroSettings(partial)
+      return { success: true, data: settings }
+    } catch (error: any) {
+      return { success: false, error: error.message }
+    }
+  })
+
+  // AI subtask generation
+  ipcMain.handle('planner:generate-subtasks', async (_event, request: any) => {
+    try {
+      const result = await generateSubtasks(request)
+      return { success: true, data: result }
+    } catch (error: any) {
+      return { success: false, error: error.message }
+    }
+  })
+
+  ipcMain.handle('planner:work-backwards', async (_event, request: any) => {
+    try {
+      const result = await workBackwards(request)
+      return { success: true, data: result }
+    } catch (error: any) {
+      return { success: false, error: error.message }
+    }
+  })
+
+  // Notifications
+  ipcMain.handle('notify', (_event, title: string, body: string) => {
+    new Notification({ title, body }).show()
   })
 }

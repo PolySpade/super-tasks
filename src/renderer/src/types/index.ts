@@ -38,8 +38,22 @@ export interface TimeBlock {
   reason: string
 }
 
+export interface BlockTask {
+  taskId: string
+  taskTitle: string
+  estimatedMinutes: number
+}
+
+export interface ContextBlock {
+  blockName: string
+  start: string
+  end: string
+  tasks: BlockTask[]
+  reason: string
+}
+
 export interface DayPlan {
-  blocks: TimeBlock[]
+  blocks: ContextBlock[]
   summary: string
 }
 
@@ -50,4 +64,53 @@ export interface PlannerSettings {
   workingHoursEnd: string
   defaultCalendarId: string
   breakDurationMinutes: number
+}
+
+export interface FocusSession {
+  id: string
+  taskId: string
+  taskTitle: string
+  startTime: string
+  endTime: string
+  durationMinutes: number
+  completed: boolean
+}
+
+export interface FocusStats {
+  todaySessions: number
+  todayMinutes: number
+  streak: number
+  lastSessionDate: string | null
+}
+
+export interface PomodoroConfig {
+  workMinutes: number
+  breakMinutes: number
+  longBreakMinutes: number
+  sessionsBeforeLongBreak: number
+  logToCalendar: boolean
+}
+
+export interface Deadline {
+  id: string
+  title: string
+  dueDate: string
+  source: 'task' | 'event'
+  sourceId: string
+  taskListId?: string
+  urgency: 'overdue' | 'red' | 'yellow' | 'green'
+  daysRemaining: number
+  hoursRemaining?: number
+  hasSubtasks: boolean
+  children?: Task[]
+}
+
+export interface GeneratedSubtask {
+  title: string
+  estimatedMinutes: number
+}
+
+export interface WorkBackwardsPlan {
+  subtasks: GeneratedSubtask[]
+  schedule: { subtaskTitle: string; date: string; start: string; end: string }[]
 }

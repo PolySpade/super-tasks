@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ArrowLeft, Calendar, Trash2, X, Save } from 'lucide-react'
+import { ArrowLeft, Calendar, Trash2, X, Save, Timer } from 'lucide-react'
 import { Task } from '../types'
 
 interface TaskDetailProps {
@@ -8,9 +8,10 @@ interface TaskDetailProps {
   onUpdate: (taskId: string, updates: { title?: string; notes?: string; due?: string | null }) => void
   onDelete: (taskId: string) => void
   onToggle: (taskId: string, completed: boolean) => void
+  onFocusStart?: (task: Task) => void
 }
 
-export function TaskDetail({ task, onBack, onUpdate, onDelete, onToggle }: TaskDetailProps) {
+export function TaskDetail({ task, onBack, onUpdate, onDelete, onToggle, onFocusStart }: TaskDetailProps) {
   const [title, setTitle] = useState(task.title)
   const [notes, setNotes] = useState(task.notes || '')
   const [due, setDue] = useState(task.due ? task.due.split('T')[0] : '')
@@ -110,13 +111,19 @@ export function TaskDetail({ task, onBack, onUpdate, onDelete, onToggle }: TaskD
         </div>
       </div>
 
-      {hasChanges && (
-        <div className="task-detail-footer">
+      <div className="task-detail-footer">
+        {hasChanges && (
           <button className="save-changes-btn" onClick={handleSave}>
             Save changes
           </button>
-        </div>
-      )}
+        )}
+        {!isCompleted && onFocusStart && (
+          <button className="start-focus-btn" onClick={() => onFocusStart(task)}>
+            <Timer size={14} />
+            Start Focus Session
+          </button>
+        )}
+      </div>
     </div>
   )
 }

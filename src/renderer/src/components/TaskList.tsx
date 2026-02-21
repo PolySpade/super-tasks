@@ -9,9 +9,10 @@ interface TaskListProps {
   onDelete: (taskId: string) => void
   onSelectTask: (task: Task) => void
   onAddSubtask: (parentId: string) => void
+  onFocusStart?: (task: Task) => void
 }
 
-export function TaskList({ tasks, loading, onToggle, onDelete, onSelectTask, onAddSubtask }: TaskListProps) {
+export function TaskList({ tasks, loading, onToggle, onDelete, onSelectTask, onAddSubtask, onFocusStart }: TaskListProps) {
   if (loading) {
     return (
       <div className="task-list-empty">
@@ -45,6 +46,7 @@ export function TaskList({ tasks, loading, onToggle, onDelete, onSelectTask, onA
           onDelete={onDelete}
           onSelect={onSelectTask}
           onAddSubtask={onAddSubtask}
+          onFocusStart={onFocusStart}
         />
       ))}
       {completed.length > 0 && (

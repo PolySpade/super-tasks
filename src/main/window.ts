@@ -3,6 +3,7 @@ import { join } from 'path'
 import { is } from '@electron-toolkit/utils'
 
 let mainWindow: BrowserWindow | null = null
+let calendarWindow: BrowserWindow | null = null
 
 export function createWindow(): BrowserWindow {
   mainWindow = new BrowserWindow({
@@ -77,4 +78,51 @@ export function getWindow(): BrowserWindow | null {
 
 export function hideWindow(): void {
   mainWindow?.hide()
+}
+
+export function createCalendarWindow(): BrowserWindow {
+  calendarWindow = new BrowserWindow({
+    width: 900,
+    height: 700,
+    show: false,
+    frame: true,
+    resizable: true,
+    skipTaskbar: false,
+    alwaysOnTop: false,
+    backgroundColor: '#1e1e1e',
+    title: 'Calendar',
+    webPreferences: {
+      preload: join(__dirname, '../preload/index.js'),
+      sandbox: false
+    }
+  })
+
+  const query = '?view=calendar'
+  if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
+    calendarWindow.loadURL(process.env['ELECTRON_RENDERER_URL'] + query)
+  } else {
+    calendarWindow.loadFile(join(__dirname, '../renderer/index.html'), { search: query })
+  }
+
+  calendarWindow.on('closed', () => {
+    calendarWindow = null
+  })
+
+  calendarWindow.once('ready-to-show', () => {
+    calendarWindow?.show()
+  })
+
+  return calendarWindow
+}
+
+export function getCalendarWindow(): BrowserWindow | null {
+  return calendarWindow
+}
+
+export function toggleCalendarWindow(): void {
+  if (calendarWindow && !calendarWindow.isDestroyed()) {
+    calendarWindow.focus()
+  } else {
+    createCalendarWindow()
+  }
 }

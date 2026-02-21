@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { LogOut, Check, X, Loader2 } from 'lucide-react'
-import { PlannerSettings } from '../types'
+import { PlannerSettings, PomodoroConfig } from '../types'
 
 interface SettingsPanelProps {
   onSignOut: () => void
@@ -22,6 +22,13 @@ export function SettingsPanel({ onSignOut }: SettingsPanelProps) {
   const [keyStatus, setKeyStatus] = useState<KeyStatus>('idle')
   const [keyError, setKeyError] = useState('')
   const [calendars, setCalendars] = useState<{ id: string; summary: string; primary: boolean }[]>([])
+  const [pomodoro, setPomodoro] = useState<PomodoroConfig>({
+    workMinutes: 25,
+    breakMinutes: 5,
+    longBreakMinutes: 15,
+    sessionsBeforeLongBreak: 4,
+    logToCalendar: false
+  })
 
   useEffect(() => {
     window.api.getStartupEnabled().then((result) => {
@@ -37,7 +44,19 @@ export function SettingsPanel({ onSignOut }: SettingsPanelProps) {
         setCalendars(result.data)
       }
     })
+    window.api.getPomodoroSettings().then((result) => {
+      if (result.success && result.data) {
+        setPomodoro(result.data)
+      }
+    })
   }, [])
+
+  const savePomodoroSetting = async (updates: Partial<PomodoroConfig>) => {
+    const result = await window.api.setPomodoroSettings(updates)
+    if (result.success && result.data) {
+      setPomodoro(result.data)
+    }
+  }
 
   const handleStartupToggle = async () => {
     const newValue = !startupEnabled
@@ -220,6 +239,100 @@ export function SettingsPanel({ onSignOut }: SettingsPanelProps) {
           </select>
         </div>
       )}
+
+      <div className="settings-divider" />
+
+      {/* Focus Mode */}
+      <div className="settings-section-label">Focus Mode</div>
+
+      <div className="settings-item">
+        <span>Work duration</span>
+        <select
+          className="settings-select"
+          value={pomodoro.workMinutes}
+          onChange={(e) => {
+            const val = Number(e.target.value)
+            setPomodoro((prev) => ({ ...prev, workMinutes: val }))
+            savePomodoroSetting({ workMinutes: val })
+          }}
+        >
+          <option value={15}>15 min</option>
+          <option value={25}>25 min</option>
+          <option value={30}>30 min</option>
+          <option value={45}>45 min</option>
+          <option value={60}>60 min</option>
+        </select>
+      </div>
+
+      <div className="settings-item">
+        <span>Break duration</span>
+        <select
+          className="settings-select"
+          value={pomodoro.breakMinutes}
+          onChange={(e) => {
+            const val = Number(e.target.value)
+            setPomodoro((prev) => ({ ...prev, breakMinutes: val }))
+            savePomodoroSetting({ breakMinutes: val })
+          }}
+        >
+          <option value={3}>3 min</option>
+          <option value={5}>5 min</option>
+          <option value={10}>10 min</option>
+          <option value={15}>15 min</option>
+        </select>
+      </div>
+
+      <div className="settings-item">
+        <span>Long break</span>
+        <select
+          className="settings-select"
+          value={pomodoro.longBreakMinutes}
+          onChange={(e) => {
+            const val = Number(e.target.value)
+            setPomodoro((prev) => ({ ...prev, longBreakMinutes: val }))
+            savePomodoroSetting({ longBreakMinutes: val })
+          }}
+        >
+          <option value={10}>10 min</option>
+          <option value={15}>15 min</option>
+          <option value={20}>20 min</option>
+          <option value={30}>30 min</option>
+        </select>
+      </div>
+
+      <div className="settings-item">
+        <span>Sessions before long break</span>
+        <select
+          className="settings-select"
+          value={pomodoro.sessionsBeforeLongBreak}
+          onChange={(e) => {
+            const val = Number(e.target.value)
+            setPomodoro((prev) => ({ ...prev, sessionsBeforeLongBreak: val }))
+            savePomodoroSetting({ sessionsBeforeLongBreak: val })
+          }}
+        >
+          <option value={2}>2</option>
+          <option value={3}>3</option>
+          <option value={4}>4</option>
+          <option value={6}>6</option>
+        </select>
+      </div>
+
+      <div className="settings-item">
+        <span>Log to calendar</span>
+        <label className="toggle">
+          <input
+            type="checkbox"
+            checked={pomodoro.logToCalendar}
+            onChange={() => {
+              const val = !pomodoro.logToCalendar
+              setPomodoro((prev) => ({ ...prev, logToCalendar: val }))
+              savePomodoroSetting({ logToCalendar: val })
+            }}
+          />
+          <span className="toggle-slider" />
+        </label>
+      </div>
 
       <div className="settings-divider" />
 

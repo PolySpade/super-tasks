@@ -13,14 +13,24 @@ interface ElectronAPI {
   getCalendars: () => Promise<{ success: boolean; data?: any[]; error?: string }>
   getCalendarEvents: (calendarId: string, timeMin: string, timeMax: string) => Promise<{ success: boolean; data?: any[]; error?: string }>
   createCalendarEvent: (calendarId: string, event: { summary: string; start: string; end: string; description?: string }) => Promise<{ success: boolean; data?: any; error?: string }>
+  updateCalendarEvent: (calendarId: string, eventId: string, updates: { start?: string; end?: string; summary?: string; description?: string }) => Promise<{ success: boolean; data?: any; error?: string }>
   deleteCalendarEvent: (calendarId: string, eventId: string) => Promise<{ success: boolean; error?: string }>
   validateApiKey: (provider: string, apiKey: string) => Promise<{ success: boolean; error?: string }>
   generatePlan: (request: any) => Promise<{ success: boolean; data?: any; error?: string }>
+  generateSubtasks: (request: { taskTitle: string; taskNotes?: string; deadline: string }) => Promise<{ success: boolean; data?: any; error?: string }>
+  workBackwards: (request: { taskTitle: string; taskNotes?: string; deadline: string; existingEvents: any[]; workingHours: { start: string; end: string }; breakMinutes: number }) => Promise<{ success: boolean; data?: any; error?: string }>
   getPlannerSettings: () => Promise<{ success: boolean; data?: any; error?: string }>
   setPlannerSettings: (partial: any) => Promise<{ success: boolean; data?: any; error?: string }>
   getStartupEnabled: () => Promise<{ enabled: boolean }>
   setStartupEnabled: (enabled: boolean) => Promise<{ success: boolean }>
   hideWindow: () => Promise<void>
+  openCalendarWindow: () => Promise<void>
+  logFocusSession: (session: any) => Promise<{ success: boolean; error?: string }>
+  getFocusTodaySessions: () => Promise<{ success: boolean; data?: any[]; error?: string }>
+  getFocusStats: () => Promise<{ success: boolean; data?: any; error?: string }>
+  getPomodoroSettings: () => Promise<{ success: boolean; data?: any; error?: string }>
+  setPomodoroSettings: (partial: any) => Promise<{ success: boolean; data?: any; error?: string }>
+  notify: (title: string, body: string) => Promise<void>
 }
 
 declare global {

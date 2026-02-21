@@ -1,7 +1,15 @@
 import { useState, useCallback } from 'react'
-import { DayPlan, TimeBlock, CalendarEvent, Task, PlannerSettings } from '../types'
+import { DayPlan, ContextBlock, CalendarEvent, Task, PlannerSettings } from '../types'
 
 type PlanState = 'idle' | 'generating' | 'review' | 'confirming' | 'done' | 'error'
+
+function addMinutesToTime(time: string, minutes: number): string {
+  const [h, m] = time.split(':').map(Number)
+  const total = h * 60 + m + minutes
+  const newH = Math.floor(total / 60) % 24
+  const newM = total % 60
+  return `${String(newH).padStart(2, '0')}:${String(newM).padStart(2, '0')}`
+}
 
 export function usePlanner() {
   const [plan, setPlan] = useState<DayPlan | null>(null)
@@ -53,13 +61,68 @@ export function usePlanner() {
     []
   )
 
+  const startManualPlan = useCallback(() => {
+    setPlan({ blocks: [], summary: '' })
+    setState('review')
+    setError(null)
+  }, [])
+
+  const addBlock = useCallback(
+    ({ blockName, start, end }: { blockName: string; start: string; end: string }) => {
+      setPlan((prev) => {
+        const base = prev || { blocks: [], summary: '' }
+        const newBlock: ContextBlock = { blockName, start, end, tasks: [], reason: '' }
+        const blocks = [...base.blocks, newBlock].sort((a, b) => a.start.localeCompare(b.start))
+        return { ...base, blocks }
+      })
+    },
+    []
+  )
+
+  const editBlock = useCallback(
+    (index: number, { blockName, start, end }: { blockName: string; start: string; end: string }) => {
+      setPlan((prev) => {
+        if (!prev) return prev
+        const blocks = [...prev.blocks]
+        blocks[index] = { ...blocks[index], blockName, start, end }
+        blocks.sort((a, b) => a.start.localeCompare(b.start))
+        return { ...prev, blocks }
+      })
+    },
+    []
+  )
+
   const rejectBlock = useCallback(
     (index: number) => {
       if (!plan) return
       setPlan({
         ...plan,
-        blocks: plan.blocks.filter((_: TimeBlock, i: number) => i !== index)
+        blocks: plan.blocks.filter((_: ContextBlock, i: number) => i !== index)
       })
+    },
+    [plan]
+  )
+
+  const rejectTask = useCallback(
+    (blockIndex: number, taskIndex: number) => {
+      if (!plan) return
+      const block = plan.blocks[blockIndex]
+      if (!block) return
+      const newTasks = block.tasks.filter((_, i) => i !== taskIndex)
+      if (newTasks.length === 0) {
+        // Remove entire block if no tasks remain
+        setPlan({
+          ...plan,
+          blocks: plan.blocks.filter((_, i) => i !== blockIndex)
+        })
+      } else {
+        // Recalculate block end time from remaining task estimates
+        const totalMinutes = newTasks.reduce((sum, t) => sum + t.estimatedMinutes, 0)
+        const newEnd = addMinutesToTime(block.start, totalMinutes)
+        const newBlocks = [...plan.blocks]
+        newBlocks[blockIndex] = { ...block, tasks: newTasks, end: newEnd }
+        setPlan({ ...plan, blocks: newBlocks })
+      }
     },
     [plan]
   )
@@ -72,14 +135,23 @@ export function usePlanner() {
       try {
         const today = new Date().toISOString().split('T')[0]
         for (const block of plan.blocks) {
+          const parts: string[] = []
+          if (block.reason) parts.push(block.reason)
+          if (block.tasks.length > 0) {
+            const taskList = block.tasks
+              .map((t) => `- ${t.taskTitle} (~${t.estimatedMinutes} min)`)
+              .join('\n')
+            parts.push(`Tasks:\n${taskList}`)
+          }
+          const description = parts.join('\n\n')
           const result = await window.api.createCalendarEvent(calendarId, {
-            summary: block.taskTitle,
+            summary: block.blockName,
             start: `${today}T${block.start}:00`,
             end: `${today}T${block.end}:00`,
-            description: `Planned task: ${block.reason}`
+            description
           })
           if (!result.success) {
-            throw new Error(result.error || `Failed to create event: ${block.taskTitle}`)
+            throw new Error(result.error || `Failed to create event: ${block.blockName}`)
           }
         }
         setState('done')
@@ -97,5 +169,5 @@ export function usePlanner() {
     setError(null)
   }, [])
 
-  return { plan, state, error, generatePlan, confirmPlan, rejectBlock, reset }
+  return { plan, state, error, generatePlan, confirmPlan, rejectBlock, rejectTask, reset, startManualPlan, addBlock, editBlock }
 }
