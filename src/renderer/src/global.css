@@ -2786,7 +2786,7 @@ body {
   padding: 8px 14px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
 }
 
 .deadline-list-content::-webkit-scrollbar {
@@ -2817,17 +2817,20 @@ body {
 .deadline-item {
   border-radius: 6px;
   overflow: hidden;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
 }
 
 .deadline-item-overdue {
   background: var(--danger-dim);
+  border-color: rgba(239, 68, 68, 0.25);
 }
 
 .deadline-item-row {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 10px;
+  gap: 10px;
+  padding: 10px 12px;
   border-left: 3px solid;
   cursor: pointer;
   transition: background 0.12s;
@@ -2850,11 +2853,12 @@ body {
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 4px;
 }
 
 .deadline-item-title {
   font-size: 13px;
+  font-weight: 500;
   color: var(--text-primary);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -2864,7 +2868,7 @@ body {
 .deadline-item-meta {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 5px;
   font-size: 11px;
   color: var(--text-tertiary);
 }
@@ -2900,10 +2904,10 @@ body {
 
 /* Expanded panel */
 .deadline-item-panel {
-  padding: 8px 14px 12px 28px;
+  padding: 10px 14px 12px 28px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
   border-left: 3px solid var(--border);
   margin-left: 0;
 }

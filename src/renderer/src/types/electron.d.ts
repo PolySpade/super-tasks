@@ -18,7 +18,7 @@ interface ElectronAPI {
   validateApiKey: (provider: string, apiKey: string) => Promise<{ success: boolean; error?: string }>
   generatePlan: (request: any) => Promise<{ success: boolean; data?: any; error?: string }>
   generateSubtasks: (request: { taskTitle: string; taskNotes?: string; deadline: string }) => Promise<{ success: boolean; data?: any; error?: string }>
-  workBackwards: (request: { taskTitle: string; taskNotes?: string; deadline: string; existingEvents: any[]; workingHours: { start: string; end: string }; breakMinutes: number }) => Promise<{ success: boolean; data?: any; error?: string }>
+  workBackwards: (request: { taskTitle: string; taskNotes?: string; deadline: string; existingEvents: any[]; workingHours: { start: string; end: string }; breakMinutes: number; lunchBreak?: { start: string; end: string } }) => Promise<{ success: boolean; data?: any; error?: string }>
   getPlannerSettings: () => Promise<{ success: boolean; data?: any; error?: string }>
   setPlannerSettings: (partial: any) => Promise<{ success: boolean; data?: any; error?: string }>
   getStartupEnabled: () => Promise<{ enabled: boolean }>

@@ -16,6 +16,8 @@ export function SettingsPanel({ onSignOut }: SettingsPanelProps) {
     aiApiKey: '',
     workingHoursStart: '09:00',
     workingHoursEnd: '17:00',
+    lunchBreakStart: '12:00',
+    lunchBreakEnd: '13:00',
     defaultCalendarId: 'primary',
     breakDurationMinutes: 15
   })
@@ -207,6 +209,31 @@ export function SettingsPanel({ onSignOut }: SettingsPanelProps) {
             onChange={(e) => {
               setSettings((prev) => ({ ...prev, workingHoursEnd: e.target.value }))
               saveSetting({ workingHoursEnd: e.target.value })
+            }}
+          />
+        </div>
+      </div>
+
+      <div className="settings-item">
+        <span>Lunch break</span>
+        <div className="settings-hours-row">
+          <input
+            type="time"
+            className="settings-time-input"
+            value={settings.lunchBreakStart}
+            onChange={(e) => {
+              setSettings((prev) => ({ ...prev, lunchBreakStart: e.target.value }))
+              saveSetting({ lunchBreakStart: e.target.value })
+            }}
+          />
+          <span className="settings-hours-sep">-</span>
+          <input
+            type="time"
+            className="settings-time-input"
+            value={settings.lunchBreakEnd}
+            onChange={(e) => {
+              setSettings((prev) => ({ ...prev, lunchBreakEnd: e.target.value }))
+              saveSetting({ lunchBreakEnd: e.target.value })
             }}
           />
         </div>

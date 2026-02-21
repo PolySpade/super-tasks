@@ -75,7 +75,8 @@ export function DeadlineList({ signedIn, taskLists, onBack }: DeadlineListProps)
       deadline.dueDate,
       events,
       { start: settings.workingHoursStart, end: settings.workingHoursEnd },
-      settings.breakDurationMinutes
+      settings.breakDurationMinutes,
+      { start: settings.lunchBreakStart, end: settings.lunchBreakEnd }
     )
   }
 

@@ -62,6 +62,8 @@ export interface PlannerSettings {
   aiApiKey: string
   workingHoursStart: string
   workingHoursEnd: string
+  lunchBreakStart: string
+  lunchBreakEnd: string
   defaultCalendarId: string
   breakDurationMinutes: number
 }

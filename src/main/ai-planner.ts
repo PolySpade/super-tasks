@@ -38,6 +38,7 @@ interface PlanRequest {
   tasks: PlanTask[]
   existingEvents: CalendarEvent[]
   workingHours: { start: string; end: string }
+  lunchBreak: { start: string; end: string }
   breakMinutes: number
 }
 
@@ -45,6 +46,7 @@ const PLANNER_SYSTEM_PROMPT = `You are a day planner AI. Given a list of tasks a
 
 Rules:
 - NEVER schedule over existing calendar events
+- NEVER schedule over the lunch break period — keep it free
 - Group tasks that share similar context into named blocks (e.g. "Communication", "Deep Work", "Admin", "Creative", "Review", "Planning")
 - Each block should contain 1-5 tasks; a solo task gets its own block
 - Schedule high-effort blocks (Deep Work, Creative) earlier when energy is highest
@@ -93,6 +95,7 @@ function buildPrompt(request: PlanRequest): string {
   return `Plan my day for ${request.date}.
 
 Working hours: ${request.workingHours.start} to ${request.workingHours.end}
+Lunch break: ${request.lunchBreak.start} to ${request.lunchBreak.end} (DO NOT schedule over this)
 Break duration between tasks: ${request.breakMinutes} minutes
 
 Existing calendar events (DO NOT schedule over these):
@@ -235,6 +238,7 @@ Rules:
 - Decompose into 3-7 actionable subtasks
 - Schedule subtasks working backwards from the deadline
 - NEVER schedule over existing calendar events
+- NEVER schedule over the lunch break period — keep it free
 - Keep all work within specified working hours
 - Include breaks between tasks
 - Leave buffer time before the deadline
@@ -263,6 +267,7 @@ interface WorkBackwardsRequest {
   deadline: string
   existingEvents: CalendarEvent[]
   workingHours: { start: string; end: string }
+  lunchBreak?: { start: string; end: string }
   breakMinutes: number
 }
 
@@ -285,12 +290,17 @@ function buildWorkBackwardsPrompt(request: WorkBackwardsRequest): string {
       }).join('\n')
     : 'No existing events'
 
+  const lunchLine = request.lunchBreak
+    ? `Lunch break: ${request.lunchBreak.start} to ${request.lunchBreak.end} (DO NOT schedule over this)`
+    : ''
+
   return `Plan backwards from the deadline for this task:
 
 Task: "${request.taskTitle}"
 ${request.taskNotes ? `Notes: ${request.taskNotes}` : ''}
 Deadline: ${request.deadline}
 Working hours: ${request.workingHours.start} to ${request.workingHours.end}
+${lunchLine}
 Break duration: ${request.breakMinutes} minutes
 Today: ${new Date().toISOString().split('T')[0]}
 

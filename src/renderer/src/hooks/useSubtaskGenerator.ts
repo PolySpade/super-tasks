@@ -43,7 +43,8 @@ export function useSubtaskGenerator() {
       deadline: string,
       events: CalendarEvent[],
       workingHours: { start: string; end: string },
-      breakMinutes: number
+      breakMinutes: number,
+      lunchBreak?: { start: string; end: string }
     ) => {
       setState('generating')
       setError(null)
@@ -56,7 +57,8 @@ export function useSubtaskGenerator() {
           deadline,
           existingEvents: events,
           workingHours,
-          breakMinutes
+          breakMinutes,
+          ...(lunchBreak && { lunchBreak })
         })
         if (result.success && result.data) {
           const plan = result.data as WorkBackwardsPlan

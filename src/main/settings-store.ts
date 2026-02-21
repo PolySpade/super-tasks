@@ -6,6 +6,8 @@ export interface PlannerSettings {
   aiApiKey: string
   workingHoursStart: string
   workingHoursEnd: string
+  lunchBreakStart: string
+  lunchBreakEnd: string
   defaultCalendarId: string
   breakDurationMinutes: number
 }
@@ -15,6 +17,8 @@ const DEFAULTS: PlannerSettings = {
   aiApiKey: '',
   workingHoursStart: '09:00',
   workingHoursEnd: '17:00',
+  lunchBreakStart: '12:00',
+  lunchBreakEnd: '13:00',
   defaultCalendarId: 'primary',
   breakDurationMinutes: 15
 }

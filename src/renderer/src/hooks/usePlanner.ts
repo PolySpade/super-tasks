@@ -43,6 +43,10 @@ export function usePlanner() {
             start: settings.workingHoursStart,
             end: settings.workingHoursEnd
           },
+          lunchBreak: {
+            start: settings.lunchBreakStart,
+            end: settings.lunchBreakEnd
+          },
           breakMinutes: settings.breakDurationMinutes
         })
 
