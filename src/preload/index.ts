@@ -81,6 +81,8 @@ const api = {
   hideWindow: () => ipcRenderer.invoke('window:hide'),
   getAlwaysOnTop: () => ipcRenderer.invoke('window:get-always-on-top'),
   setAlwaysOnTop: (enabled: boolean) => ipcRenderer.invoke('window:set-always-on-top', enabled),
+  setWindowSize: (width: number, height: number) => ipcRenderer.invoke('window:set-size', width, height),
+  getWindowSize: () => ipcRenderer.invoke('window:get-size'),
 
   // Task metadata
   getTaskMetadata: (taskId: string) => ipcRenderer.invoke('task-meta:get', taskId),

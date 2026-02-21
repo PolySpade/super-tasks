@@ -63,6 +63,7 @@ function TrayApp() {
   const [focusTask, setFocusTask] = useState<Task | null>(null)
   const [focusMode, setFocusMode] = useState<'pomodoro' | 'timebox'>('pomodoro')
   const [focusTimeBox, setFocusTimeBox] = useState<number | undefined>()
+  const [miniTimer, setMiniTimer] = useState(false)
 
   const error = listsError || tasksError
 
@@ -183,6 +184,21 @@ function TrayApp() {
     refreshTasks()
   }
 
+  const handleToggleMiniTimer = async () => {
+    if (miniTimer) {
+      // Expand back to full size
+      await window.api.setWindowSize(440, 520)
+      setMiniTimer(false)
+    } else {
+      // Shrink to mini timer
+      setTab('timer')
+      setView('timer')
+      setSelectedTask(null)
+      await window.api.setWindowSize(220, 220)
+      setMiniTimer(true)
+    }
+  }
+
   const handleToggleMIT = (taskId: string) => {
     if (isMIT(taskId)) {
       removeMIT(taskId)
@@ -217,6 +233,14 @@ function TrayApp() {
       <div className="app">
         <TitleBar onSettingsClick={() => {}} onClose={handleClose} title="Google Tasks" />
         <LoginScreen onSignIn={signIn} loading={authLoading} />
+      </div>
+    )
+  }
+
+  if (miniTimer) {
+    return (
+      <div className="app app-mini">
+        <TimerView allTasks={allTasks} mini onToggleMini={handleToggleMiniTimer} />
       </div>
     )
   }
@@ -265,7 +289,7 @@ function TrayApp() {
           onBack={() => setView('dashboard')}
         />
       ) : view === 'timer' ? (
-        <TimerView allTasks={allTasks} />
+        <TimerView allTasks={allTasks} onToggleMini={handleToggleMiniTimer} />
       ) : view === 'weekly-review' ? (
         <WeeklyReview
           signedIn={signedIn}

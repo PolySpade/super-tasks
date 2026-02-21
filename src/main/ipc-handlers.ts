@@ -20,7 +20,7 @@ import {
   deleteTaskMetadata
 } from './task-metadata-store'
 import { getMITs, setMITs, clearMITs } from './mit-store'
-import { hideWindow, toggleCalendarWindow, setAlwaysOnTop, getAlwaysOnTop } from './window'
+import { hideWindow, toggleCalendarWindow, setAlwaysOnTop, getAlwaysOnTop, setWindowSize, getWindowSize } from './window'
 import {
   logSession,
   getTodaySessions,
@@ -263,6 +263,15 @@ export function registerIpcHandlers(): void {
   ipcMain.handle('window:set-always-on-top', (_event, enabled: boolean) => {
     setAlwaysOnTop(enabled)
     return { success: true }
+  })
+
+  ipcMain.handle('window:set-size', (_event, width: number, height: number) => {
+    setWindowSize(width, height)
+    return { success: true }
+  })
+
+  ipcMain.handle('window:get-size', () => {
+    return getWindowSize()
   })
 
   // Calendar update

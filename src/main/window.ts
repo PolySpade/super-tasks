@@ -1,6 +1,10 @@
-import { BrowserWindow, screen } from 'electron'
+import { BrowserWindow, nativeImage, screen } from 'electron'
 import { join } from 'path'
 import { is } from '@electron-toolkit/utils'
+
+function getAppIcon(): Electron.NativeImage {
+  return nativeImage.createFromPath(join(__dirname, '../../resources/icon.ico'))
+}
 
 let mainWindow: BrowserWindow | null = null
 let calendarWindow: BrowserWindow | null = null
@@ -13,7 +17,7 @@ export function setQuitting(value: boolean): void {
 
 export function createWindow(): BrowserWindow {
   mainWindow = new BrowserWindow({
-    width: 380,
+    width: 440,
     height: 520,
     show: false,
     frame: false,
@@ -22,7 +26,7 @@ export function createWindow(): BrowserWindow {
     alwaysOnTop: alwaysOnTopEnabled,
     transparent: false,
     backgroundColor: '#1e1e1e',
-    icon: join(__dirname, '../../resources/icon.ico'),
+    icon: getAppIcon(),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: false
@@ -102,7 +106,7 @@ export function createCalendarWindow(): BrowserWindow {
     alwaysOnTop: false,
     backgroundColor: '#1e1e1e',
     title: 'Calendar',
-    icon: join(__dirname, '../../resources/icon.ico'),
+    icon: getAppIcon(),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: false
@@ -137,6 +141,22 @@ export function toggleCalendarWindow(): void {
   } else {
     createCalendarWindow()
   }
+}
+
+export function setWindowSize(width: number, height: number): void {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.setResizable(true)
+    mainWindow.setSize(width, height, true)
+    mainWindow.setResizable(false)
+  }
+}
+
+export function getWindowSize(): { width: number; height: number } {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    const [width, height] = mainWindow.getSize()
+    return { width, height }
+  }
+  return { width: 440, height: 520 }
 }
 
 export function setAlwaysOnTop(enabled: boolean): void {

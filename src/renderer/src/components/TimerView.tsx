@@ -1,10 +1,12 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { Play, Pause, SkipForward, Square, Flame, ChevronDown } from 'lucide-react'
+import { Play, Pause, SkipForward, Square, Flame, ChevronDown, Minimize2, Maximize2 } from 'lucide-react'
 import { Task, PomodoroConfig, FocusStats } from '../types'
 import { usePomodoroTimer, PomodoroPhase } from '../hooks/usePomodoroTimer'
 
 interface TimerViewProps {
   allTasks: Task[]
+  mini?: boolean
+  onToggleMini?: () => void
 }
 
 const CIRCLE_RADIUS = 90
@@ -43,7 +45,7 @@ function flattenTasks(tasks: Task[]): Task[] {
   return flat
 }
 
-export function TimerView({ allTasks }: TimerViewProps) {
+export function TimerView({ allTasks, mini, onToggleMini }: TimerViewProps) {
   const [config, setConfig] = useState<PomodoroConfig | null>(null)
   const [stats, setStats] = useState<FocusStats | null>(null)
   const [selectedTaskId, setSelectedTaskId] = useState<string>('')
@@ -146,6 +148,61 @@ export function TimerView({ allTasks }: TimerViewProps) {
   const color = phaseColor(timer.phase)
   const streak = stats?.streak ?? 0
 
+  if (mini) {
+    return (
+      <div className="timer-mini">
+        <div className="timer-mini-drag" />
+        <div className="timer-mini-ring">
+          <svg viewBox="0 0 200 200" width="120" height="120">
+            <circle cx="100" cy="100" r={CIRCLE_RADIUS} fill="none" stroke="var(--border)" strokeWidth="8" />
+            {started && (
+              <circle
+                cx="100" cy="100" r={CIRCLE_RADIUS} fill="none"
+                stroke={color} strokeWidth="8" strokeLinecap="round"
+                strokeDasharray={CIRCLE_CIRCUMFERENCE} strokeDashoffset={strokeOffset}
+                transform="rotate(-90 100 100)"
+                style={{ transition: 'stroke-dashoffset 0.15s linear, stroke 0.3s ease' }}
+              />
+            )}
+          </svg>
+          <div className="timer-mini-center">
+            <span className="timer-mini-phase" style={{ color }}>
+              {phaseLabel(timer.phase)}
+            </span>
+            <span className="timer-mini-time">
+              {started ? formatTime(timer.secondsRemaining) : formatTime((config?.workMinutes ?? 25) * 60)}
+            </span>
+          </div>
+        </div>
+        <div className="timer-mini-controls">
+          {!started ? (
+            <button className="timer-mini-btn timer-mini-btn-primary" onClick={handleStart} disabled={!config} title="Start">
+              <Play size={16} />
+            </button>
+          ) : (
+            <>
+              {timer.isPaused ? (
+                <button className="timer-mini-btn timer-mini-btn-primary" onClick={timer.resume} title="Resume">
+                  <Play size={16} />
+                </button>
+              ) : (
+                <button className="timer-mini-btn timer-mini-btn-primary" onClick={timer.pause} title="Pause">
+                  <Pause size={16} />
+                </button>
+              )}
+              <button className="timer-mini-btn timer-mini-btn-danger" onClick={handleStop} title="Stop">
+                <Square size={14} />
+              </button>
+            </>
+          )}
+          <button className="timer-mini-btn" onClick={onToggleMini} title="Expand">
+            <Maximize2 size={14} />
+          </button>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="timer-view">
       <div className="timer-view-content">
@@ -154,6 +211,13 @@ export function TimerView({ allTasks }: TimerViewProps) {
             <Flame size={14} />
             <span>{streak} day streak</span>
           </div>
+        )}
+
+        {/* Mini toggle */}
+        {onToggleMini && (
+          <button className="timer-mini-toggle" onClick={onToggleMini} title="Mini timer">
+            <Minimize2 size={14} />
+          </button>
         )}
 
         {/* Task picker */}
@@ -172,8 +236,8 @@ export function TimerView({ allTasks }: TimerViewProps) {
         </div>
 
         {/* Timer ring */}
-        <div className="focus-timer-ring">
-          <svg viewBox="0 0 200 200" width="180" height="180">
+        <div className="focus-timer-ring timer-ring-compact">
+          <svg viewBox="0 0 200 200" width="150" height="150">
             <circle cx="100" cy="100" r={CIRCLE_RADIUS} fill="none" stroke="var(--border)" strokeWidth="6" />
             {started && (
               <circle
