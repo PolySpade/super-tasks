@@ -1,10 +1,13 @@
-import { app, Notification } from 'electron'
+import { app, globalShortcut, Notification } from 'electron'
 import { electronApp, optimizer } from '@electron-toolkit/utils'
 import Store from 'electron-store'
 import { createWindow, toggleWindow, getWindow, setQuitting } from './window'
 import { createTray, getTray } from './tray'
 import { registerIpcHandlers } from './ipc-handlers'
 import { restoreSession } from './google-auth'
+import { showCaptureWindow } from './quick-capture-window'
+import { startHabitScheduler, stopHabitScheduler } from './habit-scheduler'
+import { startNudgeEngine, stopNudgeEngine } from './nudge-engine'
 import dotenv from 'dotenv'
 import { join } from 'path'
 
@@ -26,6 +29,9 @@ if (!gotTheLock) {
 
   app.on('before-quit', () => {
     setQuitting(true)
+    globalShortcut.unregisterAll()
+    stopHabitScheduler()
+    stopNudgeEngine()
   })
 
   app.whenReady().then(async () => {
@@ -39,8 +45,26 @@ if (!gotTheLock) {
     createWindow()
     createTray()
 
+    // Register global quick capture hotkey
+    const captureStore = new Store({ name: 'planner-settings' })
+    const savedSettings = captureStore.get('settings') as any
+    const hotkey = savedSettings?.quickCaptureHotkey || 'Ctrl+Shift+Space'
+    try {
+      globalShortcut.register(hotkey, () => {
+        showCaptureWindow()
+      })
+    } catch {
+      // Hotkey registration failed — silently ignore
+    }
+
     // Auto-restore session
     await restoreSession()
+
+    // Start habit scheduler
+    startHabitScheduler()
+
+    // Start nudge engine
+    startNudgeEngine()
 
     // Show window unless launched with --hidden
     const launchedHidden = process.argv.includes('--hidden')

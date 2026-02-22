@@ -20,6 +20,11 @@ import { FocusMode } from './components/FocusMode'
 import { CalendarView } from './components/CalendarView'
 import { TimerView } from './components/TimerView'
 import { WeeklyReview } from './components/WeeklyReview'
+import { QuickCaptureInput } from './components/QuickCaptureInput'
+import { EODReview } from './components/EODReview'
+import { useEODReview } from './hooks/useEODReview'
+import { DailyRitual } from './components/DailyRitual'
+import { useDailyRitual } from './hooks/useDailyRitual'
 import { LayoutDashboard, ListTodo, CalendarDays, CalendarClock, Timer } from 'lucide-react'
 
 type Tab = 'dashboard' | 'tasks' | 'calendar' | 'plan' | 'timer'
@@ -27,8 +32,12 @@ type View = 'dashboard' | 'tasks' | 'settings' | 'detail' | 'plan' | 'calendar' 
 
 // Check if we're in calendar window mode
 const isCalendarWindow = window.location.search.includes('view=calendar')
+const isQuickCapture = window.location.search.includes('view=quick-capture')
 
 export default function App() {
+  if (isQuickCapture) {
+    return <QuickCaptureInput />
+  }
   if (isCalendarWindow) {
     return <CalendarView />
   }
@@ -54,6 +63,8 @@ function TrayApp() {
 
   const { metadataMap, setMetadata } = useTaskMetadata()
   const { mits, setMITs, addMIT, removeMIT, isMIT } = useMITs()
+  const { shouldShow: shouldShowEOD, dismiss: dismissEOD } = useEODReview(signedIn)
+  const { shouldShow: shouldShowRitual, show: showRitual, dismiss: dismissRitual, complete: completeRitual } = useDailyRitual(signedIn)
 
   const [tab, setTab] = useState<Tab>('dashboard')
   const [view, setView] = useState<View>('dashboard')
@@ -325,6 +336,7 @@ function TrayApp() {
               onSetMITs={setMITs}
               allTasks={allTasks}
               metadataMap={metadataMap}
+              onStartRitual={showRitual}
             />
           )}
         </>
@@ -416,6 +428,32 @@ function TrayApp() {
           onExit={handleFocusExit}
           mode={focusMode}
           timeBoxMinutes={focusTimeBox}
+        />
+      )}
+
+      {/* End-of-day review overlay */}
+      {shouldShowEOD && !focusTask && !shouldShowRitual && (
+        <EODReview
+          signedIn={signedIn}
+          taskLists={taskLists}
+          onDismiss={dismissEOD}
+          onUpdateTask={updateTask}
+        />
+      )}
+
+      {/* Daily planning ritual overlay */}
+      {shouldShowRitual && !focusTask && (
+        <DailyRitual
+          signedIn={signedIn}
+          taskLists={taskLists}
+          allTasks={allTasks}
+          mits={mits}
+          onSetMITs={setMITs}
+          onComplete={completeRitual}
+          onDismiss={dismissRitual}
+          onSelectTask={handleSelectTask}
+          onNavigateToPlan={() => { completeRitual(); handleTabChange('plan') }}
+          metadataMap={metadataMap}
         />
       )}
     </div>

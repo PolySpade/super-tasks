@@ -83,6 +83,16 @@ export function PlanView({ signedIn, taskLists, onOpenSettings, metadataMap, mit
     const calendarId = settings?.defaultCalendarId || 'primary'
     confirmPlan(calendarId)
     setShowConfirm(false)
+
+    // Send plan to nudge engine
+    if (plan) {
+      window.api.setTodaysPlan(plan.blocks.map((b) => ({
+        blockName: b.blockName,
+        start: b.start,
+        end: b.end,
+        tasks: b.tasks.map((t) => ({ taskId: t.taskId, taskTitle: t.taskTitle }))
+      })))
+    }
   }
 
   const handleDone = () => {

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { ArrowLeft, Calendar, Trash2, X, Save, Timer, Clock, Zap } from 'lucide-react'
 import { Task, EnergyLevel, TaskMetadata } from '../types'
+import { TimeTrackingBadge } from './TimeTrackingBadge'
 
 const TIME_BOX_OPTIONS = [
   { label: 'None', value: 0 },
@@ -34,6 +35,7 @@ export function TaskDetail({ task, onBack, onUpdate, onDelete, onToggle, onFocus
   const [due, setDue] = useState(task.due ? task.due.split('T')[0] : '')
   const [timeBox, setTimeBox] = useState(metadata?.timeBoxMinutes || 0)
   const [energy, setEnergy] = useState<EnergyLevel | undefined>(metadata?.energyLevel)
+  const [trackingData, setTrackingData] = useState<{ totalMinutes: number; sessionCount: number } | null>(null)
   const isCompleted = task.status === 'completed'
 
   useEffect(() => {
@@ -42,6 +44,15 @@ export function TaskDetail({ task, onBack, onUpdate, onDelete, onToggle, onFocus
     setDue(task.due ? task.due.split('T')[0] : '')
     setTimeBox(metadata?.timeBoxMinutes || 0)
     setEnergy(metadata?.energyLevel)
+
+    // Load time tracking data
+    window.api.getTimeTracking(task.id).then((result) => {
+      if (result.success && result.data) {
+        setTrackingData({ totalMinutes: result.data.totalMinutes, sessionCount: result.data.sessionCount })
+      } else {
+        setTrackingData(null)
+      }
+    })
   }, [task.id])
 
   const hasChanges =
@@ -178,6 +189,20 @@ export function TaskDetail({ task, onBack, onUpdate, onDelete, onToggle, onFocus
             ))}
           </div>
         </div>
+
+        {trackingData && trackingData.totalMinutes > 0 && (
+          <div className="task-detail-field">
+            <label>
+              <Clock size={13} />
+              Time Tracked
+            </label>
+            <TimeTrackingBadge
+              estimatedMinutes={metadata?.timeBoxMinutes}
+              actualMinutes={trackingData.totalMinutes}
+              sessionCount={trackingData.sessionCount}
+            />
+          </div>
+        )}
 
         <div className="task-detail-field">
           <label>Notes</label>

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { LogOut, Check, X, Loader2 } from 'lucide-react'
 import { PlannerSettings, PomodoroConfig } from '../types'
+import { NudgeSettings } from './NudgeSettings'
 
 interface SettingsPanelProps {
   onSignOut: () => void
@@ -19,8 +20,11 @@ export function SettingsPanel({ onSignOut }: SettingsPanelProps) {
     lunchBreakStart: '12:00',
     lunchBreakEnd: '13:00',
     defaultCalendarId: 'primary',
-    breakDurationMinutes: 15
+    breakDurationMinutes: 15,
+    quickCaptureHotkey: 'Ctrl+Shift+Space',
+    quickCaptureDefaultListId: ''
   })
+  const [taskLists, setTaskLists] = useState<{ id: string; title: string }[]>([])
   const [apiKeyInput, setApiKeyInput] = useState('')
   const [keyStatus, setKeyStatus] = useState<KeyStatus>('idle')
   const [keyError, setKeyError] = useState('')
@@ -48,6 +52,11 @@ export function SettingsPanel({ onSignOut }: SettingsPanelProps) {
     window.api.getCalendars().then((result) => {
       if (result.success && result.data) {
         setCalendars(result.data)
+      }
+    })
+    window.api.getTaskLists().then((result) => {
+      if (result.success && result.data) {
+        setTaskLists(result.data)
       }
     })
     window.api.getPomodoroSettings().then((result) => {
@@ -370,6 +379,52 @@ export function SettingsPanel({ onSignOut }: SettingsPanelProps) {
           <span className="toggle-slider" />
         </label>
       </div>
+
+      <div className="settings-divider" />
+
+      {/* Nudges */}
+      <div className="settings-section-label">Nudges & Reminders</div>
+      <NudgeSettings />
+
+      <div className="settings-divider" />
+
+      {/* Quick Capture */}
+      <div className="settings-section-label">Quick Capture</div>
+
+      <div className="settings-item">
+        <span>Hotkey</span>
+        <input
+          type="text"
+          className="settings-input"
+          style={{ width: 160 }}
+          value={settings.quickCaptureHotkey}
+          onChange={(e) => {
+            setSettings((prev) => ({ ...prev, quickCaptureHotkey: e.target.value }))
+          }}
+          onBlur={() => saveSetting({ quickCaptureHotkey: settings.quickCaptureHotkey })}
+        />
+      </div>
+
+      {taskLists.length > 0 && (
+        <div className="settings-item">
+          <span>Default list</span>
+          <select
+            className="settings-select"
+            value={settings.quickCaptureDefaultListId}
+            onChange={(e) => {
+              setSettings((prev) => ({ ...prev, quickCaptureDefaultListId: e.target.value }))
+              saveSetting({ quickCaptureDefaultListId: e.target.value })
+            }}
+          >
+            <option value="">First available</option>
+            {taskLists.map((list) => (
+              <option key={list.id} value={list.id}>
+                {list.title}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
 
       <div className="settings-divider" />
 

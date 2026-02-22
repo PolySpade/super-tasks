@@ -96,7 +96,46 @@ const api = {
   clearMITs: (date: string) => ipcRenderer.invoke('mit:clear', date),
 
   // Focus week sessions
-  getFocusWeekSessions: () => ipcRenderer.invoke('focus:get-week-sessions')
+  getFocusWeekSessions: () => ipcRenderer.invoke('focus:get-week-sessions'),
+
+  // Nudges
+  getNudgeConfig: () => ipcRenderer.invoke('nudge:get-config'),
+  setNudgeConfig: (partial: any) => ipcRenderer.invoke('nudge:set-config', partial),
+  setTodaysPlan: (blocks: any[]) => ipcRenderer.invoke('nudge:set-todays-plan', blocks),
+  reportBreakStart: () => ipcRenderer.invoke('nudge:report-break-start'),
+  reportTaskComplete: () => ipcRenderer.invoke('nudge:report-task-complete'),
+
+  // Daily ritual
+  ritualWasCompletedToday: () => ipcRenderer.invoke('ritual:was-completed-today'),
+  ritualMarkComplete: () => ipcRenderer.invoke('ritual:mark-complete'),
+  ritualGetHistory: () => ipcRenderer.invoke('ritual:get-history'),
+
+  // End-of-day review
+  eodWasDoneToday: () => ipcRenderer.invoke('eod:was-done-today'),
+  eodSave: (review: any) => ipcRenderer.invoke('eod:save', review),
+  eodGetRecent: (count?: number) => ipcRenderer.invoke('eod:get-recent', count),
+  eodGetAverageRating: (days?: number) => ipcRenderer.invoke('eod:get-average-rating', days),
+
+  // Habits
+  getHabits: () => ipcRenderer.invoke('habits:get-all'),
+  createHabit: (habit: any) => ipcRenderer.invoke('habits:create', habit),
+  updateHabit: (id: string, updates: any) => ipcRenderer.invoke('habits:update', id, updates),
+  deleteHabit: (id: string) => ipcRenderer.invoke('habits:delete', id),
+  getTodaysHabits: (date: string) => ipcRenderer.invoke('habits:get-today', date),
+  completeHabit: (habitId: string, date: string, taskId?: string) =>
+    ipcRenderer.invoke('habits:complete', habitId, date, taskId),
+  uncompleteHabit: (habitId: string, date: string) =>
+    ipcRenderer.invoke('habits:uncomplete', habitId, date),
+  getHabitStreaks: () => ipcRenderer.invoke('habits:get-streaks'),
+
+  // Quick capture
+  quickCapture: (input: string) => ipcRenderer.invoke('capture:submit', input),
+  hideCaptureWindow: () => ipcRenderer.invoke('capture:hide'),
+
+  // Time tracking
+  getTimeTracking: (taskId: string) => ipcRenderer.invoke('time-tracking:get', taskId),
+  getAllTimeTracking: () => ipcRenderer.invoke('time-tracking:get-all'),
+  getHistoricalTimeData: () => ipcRenderer.invoke('time-tracking:get-historical')
 }
 
 contextBridge.exposeInMainWorld('api', api)

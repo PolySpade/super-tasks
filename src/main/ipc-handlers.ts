@@ -20,6 +20,22 @@ import {
   deleteTaskMetadata
 } from './task-metadata-store'
 import { getMITs, setMITs, clearMITs } from './mit-store'
+import { getTaskTimeData, getAllTimeData, getHistoricalData } from './time-tracking-store'
+import { parseCapture } from './quick-capture-parser'
+import { hideCaptureWindow } from './quick-capture-window'
+import { wasDoneToday, saveReview, getRecentReviews, getAverageRating } from './eod-review-store'
+import { wasCompletedToday as ritualCompletedToday, markComplete as markRitualComplete, getHistory as getRitualHistory } from './ritual-store'
+import { getNudgeConfig, setNudgeConfig, setTodaysPlan, reportBreakStart, reportTaskComplete } from './nudge-engine'
+import {
+  getAllHabits,
+  createHabit,
+  updateHabit,
+  deleteHabit,
+  getTodaysHabits,
+  completeHabit,
+  uncompleteHabit,
+  getAllStreaks
+} from './habit-store'
 import { hideWindow, toggleCalendarWindow, setAlwaysOnTop, getAlwaysOnTop, setWindowSize, getWindowSize } from './window'
 import {
   logSession,
@@ -441,6 +457,259 @@ export function registerIpcHandlers(): void {
     try {
       clearMITs(date)
       return { success: true }
+    } catch (error: any) {
+      return { success: false, error: error.message }
+    }
+  })
+
+  // Nudges
+  ipcMain.handle('nudge:get-config', () => {
+    try {
+      const config = getNudgeConfig()
+      return { success: true, data: config }
+    } catch (error: any) {
+      return { success: false, error: error.message }
+    }
+  })
+
+  ipcMain.handle('nudge:set-config', (_event, partial: any) => {
+    try {
+      const config = setNudgeConfig(partial)
+      return { success: true, data: config }
+    } catch (error: any) {
+      return { success: false, error: error.message }
+    }
+  })
+
+  ipcMain.handle('nudge:set-todays-plan', (_event, blocks: any[]) => {
+    try {
+      setTodaysPlan(blocks)
+      return { success: true }
+    } catch (error: any) {
+      return { success: false, error: error.message }
+    }
+  })
+
+  ipcMain.handle('nudge:report-break-start', () => {
+    try {
+      reportBreakStart()
+      return { success: true }
+    } catch (error: any) {
+      return { success: false, error: error.message }
+    }
+  })
+
+  ipcMain.handle('nudge:report-task-complete', () => {
+    try {
+      reportTaskComplete()
+      return { success: true }
+    } catch (error: any) {
+      return { success: false, error: error.message }
+    }
+  })
+
+  // Daily ritual
+  ipcMain.handle('ritual:was-completed-today', () => {
+    try {
+      return { success: true, data: ritualCompletedToday() }
+    } catch (error: any) {
+      return { success: false, error: error.message }
+    }
+  })
+
+  ipcMain.handle('ritual:mark-complete', () => {
+    try {
+      markRitualComplete()
+      return { success: true }
+    } catch (error: any) {
+      return { success: false, error: error.message }
+    }
+  })
+
+  ipcMain.handle('ritual:get-history', () => {
+    try {
+      const history = getRitualHistory()
+      return { success: true, data: history }
+    } catch (error: any) {
+      return { success: false, error: error.message }
+    }
+  })
+
+  // End-of-day review
+  ipcMain.handle('eod:was-done-today', () => {
+    try {
+      return { success: true, data: wasDoneToday() }
+    } catch (error: any) {
+      return { success: false, error: error.message }
+    }
+  })
+
+  ipcMain.handle('eod:save', (_event, review: any) => {
+    try {
+      saveReview(review)
+      return { success: true }
+    } catch (error: any) {
+      return { success: false, error: error.message }
+    }
+  })
+
+  ipcMain.handle('eod:get-recent', (_event, count?: number) => {
+    try {
+      const reviews = getRecentReviews(count)
+      return { success: true, data: reviews }
+    } catch (error: any) {
+      return { success: false, error: error.message }
+    }
+  })
+
+  ipcMain.handle('eod:get-average-rating', (_event, days?: number) => {
+    try {
+      const avg = getAverageRating(days)
+      return { success: true, data: avg }
+    } catch (error: any) {
+      return { success: false, error: error.message }
+    }
+  })
+
+  // Habits
+  ipcMain.handle('habits:get-all', () => {
+    try {
+      const habits = getAllHabits()
+      return { success: true, data: habits }
+    } catch (error: any) {
+      return { success: false, error: error.message }
+    }
+  })
+
+  ipcMain.handle('habits:create', (_event, habit: any) => {
+    try {
+      const created = createHabit(habit)
+      return { success: true, data: created }
+    } catch (error: any) {
+      return { success: false, error: error.message }
+    }
+  })
+
+  ipcMain.handle('habits:update', (_event, id: string, updates: any) => {
+    try {
+      const updated = updateHabit(id, updates)
+      return { success: true, data: updated }
+    } catch (error: any) {
+      return { success: false, error: error.message }
+    }
+  })
+
+  ipcMain.handle('habits:delete', (_event, id: string) => {
+    try {
+      deleteHabit(id)
+      return { success: true }
+    } catch (error: any) {
+      return { success: false, error: error.message }
+    }
+  })
+
+  ipcMain.handle('habits:get-today', (_event, date: string) => {
+    try {
+      const habits = getTodaysHabits(date)
+      return { success: true, data: habits }
+    } catch (error: any) {
+      return { success: false, error: error.message }
+    }
+  })
+
+  ipcMain.handle('habits:complete', (_event, habitId: string, date: string, taskId?: string) => {
+    try {
+      completeHabit(habitId, date, taskId)
+      return { success: true }
+    } catch (error: any) {
+      return { success: false, error: error.message }
+    }
+  })
+
+  ipcMain.handle('habits:uncomplete', (_event, habitId: string, date: string) => {
+    try {
+      uncompleteHabit(habitId, date)
+      return { success: true }
+    } catch (error: any) {
+      return { success: false, error: error.message }
+    }
+  })
+
+  ipcMain.handle('habits:get-streaks', () => {
+    try {
+      const streaks = getAllStreaks()
+      return { success: true, data: streaks }
+    } catch (error: any) {
+      return { success: false, error: error.message }
+    }
+  })
+
+  // Quick capture
+  ipcMain.handle('capture:submit', async (_event, input: string) => {
+    try {
+      const parsed = await parseCapture(input)
+      const settingsStore = getSettings()
+      const defaultListId = (settingsStore as any).quickCaptureDefaultListId || ''
+
+      // Get first available list if no default
+      let listId = defaultListId
+      if (!listId) {
+        const lists = await getTaskLists()
+        if (lists.length > 0) listId = lists[0].id
+      }
+
+      if (!listId) {
+        return { success: false, error: 'No task list available' }
+      }
+
+      const task = await createTask(listId, parsed.title, parsed.notes, parsed.due)
+
+      // Set metadata if parsed
+      if (parsed.energyLevel || parsed.timeBoxMinutes) {
+        const meta: any = {}
+        if (parsed.energyLevel) meta.energyLevel = parsed.energyLevel
+        if (parsed.timeBoxMinutes) meta.timeBoxMinutes = parsed.timeBoxMinutes
+        setTaskMetadata(task.id, meta)
+      }
+
+      new Notification({
+        title: 'Task Captured',
+        body: parsed.title
+      }).show()
+
+      return { success: true, data: task }
+    } catch (error: any) {
+      return { success: false, error: error.message }
+    }
+  })
+
+  ipcMain.handle('capture:hide', () => {
+    hideCaptureWindow()
+  })
+
+  // Time tracking
+  ipcMain.handle('time-tracking:get', (_event, taskId: string) => {
+    try {
+      const data = getTaskTimeData(taskId)
+      return { success: true, data }
+    } catch (error: any) {
+      return { success: false, error: error.message }
+    }
+  })
+
+  ipcMain.handle('time-tracking:get-all', () => {
+    try {
+      const data = getAllTimeData()
+      return { success: true, data }
+    } catch (error: any) {
+      return { success: false, error: error.message }
+    }
+  })
+
+  ipcMain.handle('time-tracking:get-historical', () => {
+    try {
+      const data = getHistoricalData()
+      return { success: true, data }
     } catch (error: any) {
       return { success: false, error: error.message }
     }

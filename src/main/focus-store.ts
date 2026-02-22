@@ -1,4 +1,5 @@
 import Store from 'electron-store'
+import { addTimeToTask } from './time-tracking-store'
 
 export interface FocusSession {
   id: string
@@ -56,6 +57,11 @@ export function logSession(session: FocusSession): void {
   const sessions = getSessions()
   sessions.push(session)
   store.set('sessions', sessions)
+
+  // Auto-capture time tracking data
+  if (session.completed && session.taskId && session.durationMinutes > 0) {
+    addTimeToTask(session.taskId, session.durationMinutes)
+  }
 }
 
 export function getTodaySessions(): FocusSession[] {

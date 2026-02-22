@@ -11,6 +11,7 @@
   --bg-tertiary: rgba(255, 255, 255, 0.06);
   --bg-hover: rgba(255, 255, 255, 0.04);
   --bg-surface: rgba(255, 255, 255, 0.04);
+  --bg-input: #1a1a32;
   --text-primary: #e8e8f0;
   --text-secondary: #9898b8;
   --text-tertiary: #6a6a88;
@@ -36,6 +37,7 @@
   --glass-1: rgba(255, 255, 255, 0.04);
   --glass-2: rgba(255, 255, 255, 0.07);
   --glass-3: rgba(255, 255, 255, 0.10);
+    --glass-4: rgba(16, 28, 62, 0.9);
 
   /* Glass borders */
   --border: rgba(255, 255, 255, 0.06);
@@ -253,7 +255,7 @@ body {
 .task-list-selector select {
   flex: 1;
   padding: 7px 10px;
-  background: var(--bg-tertiary);
+  background: var(--bg-input);
   color: var(--text-primary);
   border: 1px solid var(--border);
   border-radius: 6px;
@@ -1527,7 +1529,7 @@ body {
 }
 
 .plan-confirm-card {
-  background: var(--glass-2);
+  background: var(--glass-4);
   backdrop-filter: var(--blur-lg);
   -webkit-backdrop-filter: var(--blur-lg);
   border: 1px solid var(--glass-border-strong);
@@ -1730,7 +1732,7 @@ body {
 
 .settings-select {
   padding: 5px 8px;
-  background: var(--bg-tertiary);
+  background: var(--bg-input);
   color: var(--text-primary);
   border: 1px solid var(--border);
   border-radius: 6px;
@@ -2712,7 +2714,7 @@ body {
 
 .quick-add-select {
   padding: 7px 10px;
-  background: var(--bg-tertiary);
+  background: var(--bg-input);
   color: var(--text-primary);
   border: 1px solid var(--border);
   border-radius: 6px;
@@ -4237,7 +4239,7 @@ body {
   width: 100%;
   padding: 6px 10px;
   padding-right: 24px;
-  background: var(--bg-tertiary);
+  background: var(--bg-input);
   color: var(--text-primary);
   border: 1px solid var(--border);
   border-radius: 6px;

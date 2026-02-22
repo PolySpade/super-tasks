@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
-import { ArrowLeft, CheckCircle2, AlertCircle, Calendar, Clock, ChevronRight } from 'lucide-react'
-import { Task, TaskList, FocusSession } from '../types'
+import { ArrowLeft, CheckCircle2, AlertCircle, Calendar, Clock, ChevronRight, Target, Smile } from 'lucide-react'
+import { Task, TaskList, FocusSession, TaskMetadata } from '../types'
 
 interface WeeklyReviewProps {
   signedIn: boolean
@@ -45,6 +45,9 @@ export function WeeklyReview({ signedIn, taskLists, onBack, onSelectTask, onUpda
   const [allTasks, setAllTasks] = useState<Task[]>([])
   const [weekSessions, setWeekSessions] = useState<FocusSession[]>([])
   const [loading, setLoading] = useState(true)
+  const [estimationAccuracy, setEstimationAccuracy] = useState<number | null>(null)
+  const [avgMood, setAvgMood] = useState<number | null>(null)
+  const [weekReflections, setWeekReflections] = useState<{ date: string; reflection: string; rating: number }[]>([])
 
   useEffect(() => {
     if (!signedIn) return
@@ -60,9 +63,48 @@ export function WeeklyReview({ signedIn, taskLists, onBack, onSelectTask, onUpda
 
       const sessionsResult = await window.api.getFocusWeekSessions()
 
+      // Calculate estimation accuracy from time tracking + metadata
+      const [timeResult, metaResult] = await Promise.all([
+        window.api.getAllTimeTracking(),
+        window.api.getAllTaskMetadata()
+      ])
+
       if (!cancelled) {
         setAllTasks(tasks)
         setWeekSessions(sessionsResult?.data || [])
+
+        // Compute accuracy: tasks with both estimate and actual
+        if (timeResult?.data && metaResult?.data) {
+          const timeData = timeResult.data as Record<string, { totalMinutes: number }>
+          const metaData = metaResult.data as Record<string, TaskMetadata>
+          let totalRatio = 0
+          let count = 0
+          for (const [taskId, td] of Object.entries(timeData)) {
+            const est = metaData[taskId]?.timeBoxMinutes
+            if (est && est > 0 && td.totalMinutes > 0) {
+              totalRatio += Math.min(est / td.totalMinutes, td.totalMinutes / est)
+              count++
+            }
+          }
+          setEstimationAccuracy(count > 0 ? Math.round((totalRatio / count) * 100) : null)
+        }
+
+        // Load EOD review data
+        const [avgResult, recentResult] = await Promise.all([
+          window.api.eodGetAverageRating(7),
+          window.api.eodGetRecent(7)
+        ])
+        if (!cancelled) {
+          if (avgResult?.data !== undefined) setAvgMood(avgResult.data)
+          if (recentResult?.data) {
+            setWeekReflections(
+              recentResult.data
+                .filter((r: any) => r.reflection)
+                .map((r: any) => ({ date: r.date, reflection: r.reflection, rating: r.rating }))
+            )
+          }
+        }
+
         setLoading(false)
       }
     })()
@@ -153,6 +195,20 @@ export function WeeklyReview({ signedIn, taskLists, onBack, onSelectTask, onUpda
               <span className="weekly-stat-value">{carriedOver.length}</span>
               <span className="weekly-stat-label">carried over</span>
             </div>
+            {estimationAccuracy !== null && (
+              <div className="weekly-summary-stat">
+                <Target size={16} className="stat-icon-accent" />
+                <span className="weekly-stat-value">{estimationAccuracy}%</span>
+                <span className="weekly-stat-label">est. accuracy</span>
+              </div>
+            )}
+            {avgMood !== null && (
+              <div className="weekly-summary-stat">
+                <Smile size={16} className="stat-icon-warning" />
+                <span className="weekly-stat-value">{avgMood.toFixed(1)}</span>
+                <span className="weekly-stat-label">avg mood</span>
+              </div>
+            )}
           </div>
         </div>
 
@@ -208,6 +264,22 @@ export function WeeklyReview({ signedIn, taskLists, onBack, onSelectTask, onUpda
               Move all to Monday
               <ChevronRight size={12} />
             </button>
+          </div>
+        )}
+
+        {/* Weekly reflections */}
+        {weekReflections.length > 0 && (
+          <div className="weekly-section">
+            <div className="weekly-section-header">
+              <Smile size={14} />
+              <span>Reflections</span>
+            </div>
+            {weekReflections.map((r) => (
+              <div key={r.date} className="weekly-reflection-item">
+                <span className="weekly-reflection-date">{formatDate(r.date)}</span>
+                <span className="weekly-reflection-text">{r.reflection}</span>
+              </div>
+            ))}
           </div>
         )}
       </div>

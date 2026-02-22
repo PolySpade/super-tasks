@@ -67,6 +67,8 @@ export interface PlannerSettings {
   lunchBreakEnd: string
   defaultCalendarId: string
   breakDurationMinutes: number
+  quickCaptureHotkey: string
+  quickCaptureDefaultListId: string
 }
 
 export interface FocusSession {

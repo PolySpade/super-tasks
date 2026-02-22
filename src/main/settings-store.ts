@@ -10,6 +10,8 @@ export interface PlannerSettings {
   lunchBreakEnd: string
   defaultCalendarId: string
   breakDurationMinutes: number
+  quickCaptureHotkey: string
+  quickCaptureDefaultListId: string
 }
 
 const DEFAULTS: PlannerSettings = {
@@ -20,7 +22,9 @@ const DEFAULTS: PlannerSettings = {
   lunchBreakStart: '12:00',
   lunchBreakEnd: '13:00',
   defaultCalendarId: 'primary',
-  breakDurationMinutes: 15
+  breakDurationMinutes: 15,
+  quickCaptureHotkey: 'Ctrl+Shift+Space',
+  quickCaptureDefaultListId: ''
 }
 
 const store = new Store({ name: 'planner-settings' })

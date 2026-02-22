@@ -119,6 +119,10 @@ export function FocusMode({ task, onExit, mode = 'pomodoro', timeBoxMinutes }: F
     if (timer.phase === 'work' && timer.isRunning) {
       workStartRef.current = new Date().toISOString()
     }
+    // Report break start to nudge engine
+    if ((timer.phase === 'break' || timer.phase === 'longBreak') && timer.isRunning) {
+      window.api.reportBreakStart?.()
+    }
   }, [timer.phase, timer.isRunning])
 
   useEffect(() => {

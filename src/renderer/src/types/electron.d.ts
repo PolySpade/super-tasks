@@ -34,6 +34,43 @@ interface ElectronAPI {
   getPomodoroSettings: () => Promise<{ success: boolean; data?: any; error?: string }>
   setPomodoroSettings: (partial: any) => Promise<{ success: boolean; data?: any; error?: string }>
   notify: (title: string, body: string) => Promise<void>
+
+  // Nudges
+  getNudgeConfig: () => Promise<{ success: boolean; data?: any; error?: string }>
+  setNudgeConfig: (partial: any) => Promise<{ success: boolean; data?: any; error?: string }>
+  setTodaysPlan: (blocks: any[]) => Promise<{ success: boolean; error?: string }>
+  reportBreakStart: () => Promise<{ success: boolean; error?: string }>
+  reportTaskComplete: () => Promise<{ success: boolean; error?: string }>
+
+  // Daily ritual
+  ritualWasCompletedToday: () => Promise<{ success: boolean; data?: boolean; error?: string }>
+  ritualMarkComplete: () => Promise<{ success: boolean; error?: string }>
+  ritualGetHistory: () => Promise<{ success: boolean; data?: any[]; error?: string }>
+
+  // End-of-day review
+  eodWasDoneToday: () => Promise<{ success: boolean; data?: boolean; error?: string }>
+  eodSave: (review: any) => Promise<{ success: boolean; error?: string }>
+  eodGetRecent: (count?: number) => Promise<{ success: boolean; data?: any[]; error?: string }>
+  eodGetAverageRating: (days?: number) => Promise<{ success: boolean; data?: number | null; error?: string }>
+
+  // Habits
+  getHabits: () => Promise<{ success: boolean; data?: any[]; error?: string }>
+  createHabit: (habit: any) => Promise<{ success: boolean; data?: any; error?: string }>
+  updateHabit: (id: string, updates: any) => Promise<{ success: boolean; data?: any; error?: string }>
+  deleteHabit: (id: string) => Promise<{ success: boolean; error?: string }>
+  getTodaysHabits: (date: string) => Promise<{ success: boolean; data?: any[]; error?: string }>
+  completeHabit: (habitId: string, date: string, taskId?: string) => Promise<{ success: boolean; error?: string }>
+  uncompleteHabit: (habitId: string, date: string) => Promise<{ success: boolean; error?: string }>
+  getHabitStreaks: () => Promise<{ success: boolean; data?: any; error?: string }>
+
+  // Quick capture
+  quickCapture: (input: string) => Promise<{ success: boolean; data?: any; error?: string }>
+  hideCaptureWindow: () => Promise<void>
+
+  // Time tracking
+  getTimeTracking: (taskId: string) => Promise<{ success: boolean; data?: any; error?: string }>
+  getAllTimeTracking: () => Promise<{ success: boolean; data?: any; error?: string }>
+  getHistoricalTimeData: () => Promise<{ success: boolean; data?: any; error?: string }>
 }
 
 declare global {

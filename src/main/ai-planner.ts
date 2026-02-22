@@ -1,4 +1,5 @@
 import { getSettings, getDecryptedApiKey } from './settings-store'
+import { getHistoricalData } from './time-tracking-store'
 
 interface PlanTask {
   id: string
@@ -105,6 +106,23 @@ function buildPrompt(request: PlanRequest): string {
       }).join('\n')
     : 'No tasks to schedule'
 
+  // Include historical time tracking data for better estimates
+  const historicalData = getHistoricalData()
+  const histMap = new Map(historicalData.map((d) => [d.taskId, d]))
+  let historicalNote = ''
+  if (historicalData.length > 0) {
+    const avgRatios: number[] = []
+    for (const d of historicalData) {
+      if (d.totalMinutes > 0) avgRatios.push(d.totalMinutes / 30) // vs default 30min
+    }
+    if (avgRatios.length >= 3) {
+      const avg = avgRatios.reduce((a, b) => a + b, 0) / avgRatios.length
+      if (avg > 1.2) {
+        historicalNote = `\nNote: Historical data shows tasks typically take ${Math.round(avg * 100)}% of estimated time. Adjust your estimates upward.`
+      }
+    }
+  }
+
   return `Plan my day for ${request.date}.
 
 Working hours: ${request.workingHours.start} to ${request.workingHours.end}
@@ -116,7 +134,7 @@ ${eventsList}
 
 Tasks to schedule:
 ${tasksList}
-
+${historicalNote}
 Create an optimal schedule. Return JSON only.`
 }
 
