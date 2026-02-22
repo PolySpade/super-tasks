@@ -42,7 +42,7 @@ export function WeeklyChart({ data }: WeeklyChartProps) {
           />
           <Bar
             dataKey="count"
-            fill="#4a7dff"
+            fill="#5b8aff"
             radius={[0, 4, 4, 0]}
             barSize={16}
           />
