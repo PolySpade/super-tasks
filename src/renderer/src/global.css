@@ -2482,22 +2482,25 @@ body {
 
 .dashboard-actions {
   display: flex;
-  gap: 6px;
+  gap: 4px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 .dashboard-action-btn {
   display: flex;
   align-items: center;
   gap: 4px;
-  padding: 5px 10px;
+  padding: 4px 8px;
   background: var(--glass-1);
   color: var(--text-secondary);
   border: 1px solid var(--glass-border);
   border-radius: 6px;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 500;
   font-family: inherit;
   cursor: pointer;
+  white-space: nowrap;
   transition: all var(--transition-fast);
 }
 
@@ -4694,4 +4697,771 @@ body {
 .deadline-list-content,
 .weekly-review-content {
   animation: fade-in 0.3s ease;
+}
+
+/* ═══════════════════════════════════════ */
+/* Time Tracking Badge                     */
+/* ═══════════════════════════════════════ */
+.time-tracking-badge {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  color: var(--text-secondary);
+  padding: 6px 0;
+}
+
+.time-tracking-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+
+.time-tracking-label {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.time-tracking-bar {
+  display: flex;
+  height: 4px;
+  background: var(--glass-1);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.time-tracking-bar-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+.time-tracking-bar-over {
+  height: 100%;
+}
+
+/* ═══════════════════════════════════════ */
+/* Quick Capture                           */
+/* ═══════════════════════════════════════ */
+.quick-capture-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  height: 64px;
+  padding: 12px 16px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--glass-border-strong);
+  border-radius: 16px;
+  backdrop-filter: var(--blur-lg);
+}
+
+.quick-capture-icon {
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+.quick-capture-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--text-primary);
+  font-size: 14px;
+  font-family: inherit;
+}
+
+.quick-capture-input::placeholder {
+  color: var(--text-tertiary);
+}
+
+.quick-capture-spinner {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+/* ═══════════════════════════════════════ */
+/* Habits                                  */
+/* ═══════════════════════════════════════ */
+.habit-section {
+  background: var(--glass-1);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px;
+}
+
+.habit-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.habit-section-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.habit-count {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  font-weight: 400;
+}
+
+.habit-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  color: var(--text-tertiary);
+  font-size: 12px;
+}
+
+.habit-add-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--glass-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text-secondary);
+  font-size: 11px;
+  padding: 4px 10px;
+  cursor: pointer;
+}
+
+.habit-add-btn:hover {
+  background: var(--glass-3);
+}
+
+.habit-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.habit-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  transition: background 0.15s ease;
+}
+
+.habit-item:hover {
+  background: var(--bg-hover);
+}
+
+.habit-item.completed .habit-title {
+  text-decoration: line-through;
+  color: var(--text-tertiary);
+}
+
+.habit-title {
+  flex: 1;
+  font-size: 13px;
+  color: var(--text-primary);
+}
+
+.habit-streak {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  color: var(--warning);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.habit-delete-btn {
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.habit-item:hover .habit-delete-btn {
+  opacity: 0.6;
+}
+
+.habit-day-picker {
+  display: flex;
+  gap: 4px;
+}
+
+.habit-day-btn {
+  width: 36px;
+  height: 28px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--glass-1);
+  color: var(--text-secondary);
+  font-size: 10px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.habit-day-btn.active {
+  background: var(--accent-dim);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* Modal shared styles */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(4px);
+}
+
+.modal-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--glass-border-strong);
+  border-radius: 16px;
+  width: 380px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.modal-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.modal-body {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.modal-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.modal-field label {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.modal-footer {
+  padding: 12px 16px;
+  border-top: 1px solid var(--border);
+}
+
+/* ═══════════════════════════════════════ */
+/* End-of-Day Review                       */
+/* ═══════════════════════════════════════ */
+.eod-overlay {
+  overflow-y: auto;
+}
+
+.eod-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 32px 24px;
+  max-width: 420px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.eod-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-primary);
+  text-align: center;
+}
+
+.eod-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.eod-section-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.eod-empty {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  padding: 4px 0;
+}
+
+.eod-task-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.eod-task-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  font-size: 12px;
+  color: var(--text-primary);
+  border-radius: 6px;
+}
+
+.eod-task-item.completed {
+  color: var(--text-secondary);
+}
+
+.eod-task-item.carried {
+  justify-content: space-between;
+}
+
+.eod-carried-title {
+  flex: 1;
+  font-size: 12px;
+}
+
+.eod-more {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  padding: 2px 8px;
+}
+
+.eod-stats {
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+  padding: 12px;
+  background: var(--glass-1);
+  border-radius: 12px;
+}
+
+.eod-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.eod-stat-value {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.eod-stat-label {
+  font-size: 10px;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+}
+
+.eod-mood-picker {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+}
+
+.eod-mood-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  border: 2px solid var(--border);
+  background: var(--glass-1);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.eod-mood-btn:hover {
+  border-color: var(--accent);
+  background: var(--accent-dim);
+}
+
+.eod-mood-btn.active {
+  border-color: var(--accent);
+  background: var(--accent-dim);
+  transform: scale(1.1);
+}
+
+.eod-mood-emoji {
+  font-size: 22px;
+}
+
+.eod-reflection-prompt {
+  font-size: 13px;
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+.eod-reflection-input {
+  width: 100%;
+  background: var(--glass-1);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  color: var(--text-primary);
+  font-size: 13px;
+  font-family: inherit;
+  resize: none;
+  outline: none;
+}
+
+.eod-reflection-input:focus {
+  border-color: var(--accent);
+}
+
+.eod-finish-btn {
+  align-self: center;
+}
+
+/* Mood Trend (Dashboard) */
+.mood-trend {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--glass-1);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.mood-trend-label {
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.mood-trend-dots {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.mood-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+/* Weekly Review Reflections */
+.weekly-reflection-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: var(--glass-1);
+  margin-bottom: 4px;
+}
+
+.weekly-reflection-date {
+  font-size: 10px;
+  color: var(--text-tertiary);
+  font-weight: 500;
+}
+
+.weekly-reflection-text {
+  font-size: 12px;
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+/* ═══════════════════════════════════════ */
+/* Daily Planning Ritual                   */
+/* ═══════════════════════════════════════ */
+.ritual-overlay {
+  overflow-y: auto;
+}
+
+.ritual-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 24px;
+  max-width: 420px;
+  width: 100%;
+  margin: 0 auto;
+  min-height: 100vh;
+}
+
+.ritual-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.ritual-date {
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+
+.ritual-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.ritual-progress {
+  display: flex;
+  gap: 6px;
+  margin: 8px 0;
+}
+
+.ritual-progress-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--glass-2);
+  transition: all 0.2s ease;
+}
+
+.ritual-progress-dot.active {
+  background: var(--accent);
+}
+
+.ritual-progress-dot.current {
+  width: 20px;
+  border-radius: 4px;
+}
+
+.ritual-step-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.ritual-body {
+  flex: 1;
+}
+
+.ritual-step {
+  animation: fade-in 0.2s ease;
+}
+
+.ritual-empty {
+  text-align: center;
+  color: var(--text-tertiary);
+  font-size: 13px;
+  padding: 24px;
+}
+
+.ritual-task-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ritual-task-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  background: var(--glass-1);
+  border-radius: 8px;
+  border: 1px solid var(--border);
+}
+
+.ritual-task-item.clickable {
+  cursor: pointer;
+}
+
+.ritual-task-item.clickable:hover {
+  background: var(--glass-2);
+}
+
+.ritual-task-item.dropped {
+  opacity: 0.4;
+  text-decoration: line-through;
+}
+
+.ritual-task-title {
+  flex: 1;
+  font-size: 13px;
+  color: var(--text-primary);
+}
+
+.ritual-task-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.ritual-drop-btn,
+.ritual-keep-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  font-size: 11px;
+  cursor: pointer;
+  background: var(--glass-1);
+  color: var(--text-secondary);
+}
+
+.ritual-drop-btn:hover {
+  background: var(--danger-dim);
+  color: var(--danger);
+  border-color: var(--danger);
+}
+
+.ritual-keep-btn:hover {
+  background: var(--success-dim);
+  color: var(--success);
+  border-color: var(--success);
+}
+
+.ritual-energy-info {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  text-align: center;
+  margin-bottom: 12px;
+}
+
+.ritual-event-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  background: var(--glass-1);
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.ritual-event-time {
+  font-weight: 600;
+  color: var(--text-primary);
+  min-width: 40px;
+}
+
+.ritual-event-title {
+  flex: 1;
+  color: var(--text-primary);
+}
+
+.ritual-plan-prompt {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 24px;
+  text-align: center;
+}
+
+.ritual-plan-icon {
+  color: var(--accent);
+}
+
+.ritual-plan-prompt p {
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.ritual-skip-plan {
+  background: none;
+  border: none;
+  color: var(--text-tertiary);
+  font-size: 12px;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.ritual-summary {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 24px;
+}
+
+.ritual-trophy {
+  color: var(--warning);
+}
+
+.ritual-summary-stats {
+  display: flex;
+  gap: 20px;
+}
+
+.ritual-motivation {
+  font-size: 14px;
+  color: var(--text-secondary);
+  text-align: center;
+}
+
+.ritual-nav {
+  display: flex;
+  justify-content: space-between;
+  padding-top: 8px;
+}
+
+.ritual-nav-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--glass-1);
+  color: var(--text-secondary);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.ritual-nav-btn:hover {
+  background: var(--glass-2);
+}
+
+.ritual-nav-next {
+  background: var(--accent-dim);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.ritual-nav-next:hover {
+  background: var(--accent);
+  color: white;
+}
+
+.time-tracking-status {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  font-weight: 500;
 }
