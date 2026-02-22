@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react'
-import { DayPlan, ContextBlock, CalendarEvent, Task, PlannerSettings } from '../types'
+import { DayPlan, ContextBlock, CalendarEvent, Task, PlannerSettings, TaskMetadata } from '../types'
 
 type PlanState = 'idle' | 'generating' | 'review' | 'confirming' | 'done' | 'error'
 
@@ -30,7 +30,9 @@ export function usePlanner() {
     async (
       tasks: Task[],
       events: CalendarEvent[],
-      settings: PlannerSettings
+      settings: PlannerSettings,
+      mitTaskIds?: string[],
+      metadataMap?: Record<string, TaskMetadata>
     ) => {
       setState('generating')
       setError(null)
@@ -45,6 +47,16 @@ export function usePlanner() {
             due: t.due
           }))
 
+        const taskMeta: Record<string, { energyLevel?: string; timeBoxMinutes?: number }> = {}
+        if (metadataMap) {
+          for (const t of incompleteTasks) {
+            const m = metadataMap[t.id]
+            if (m?.energyLevel || m?.timeBoxMinutes) {
+              taskMeta[t.id] = { energyLevel: m.energyLevel, timeBoxMinutes: m.timeBoxMinutes }
+            }
+          }
+        }
+
         const result = await window.api.generatePlan({
           date: today,
           tasks: incompleteTasks,
@@ -57,7 +69,9 @@ export function usePlanner() {
             start: settings.lunchBreakStart,
             end: settings.lunchBreakEnd
           },
-          breakMinutes: settings.breakDurationMinutes
+          breakMinutes: settings.breakDurationMinutes,
+          mitTaskIds: mitTaskIds || [],
+          taskMetadata: taskMeta
         })
 
         if (result.success && result.data) {

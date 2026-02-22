@@ -281,6 +281,8 @@ function TrayApp() {
           signedIn={signedIn}
           taskLists={taskLists}
           onOpenSettings={handleOpenSettings}
+          metadataMap={metadataMap}
+          mits={mits}
         />
       ) : view === 'deadlines' ? (
         <DeadlineList

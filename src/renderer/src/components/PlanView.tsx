@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { PlannerSettings, Task, TaskList } from '../types'
+import { PlannerSettings, Task, TaskList, TaskMetadata } from '../types'
 import { useCalendar, CalendarEventWithColor } from '../hooks/useCalendar'
 import { usePlanner } from '../hooks/usePlanner'
 import { TimeBlockRow } from './TimeBlock'
@@ -11,9 +11,11 @@ interface PlanViewProps {
   signedIn: boolean
   taskLists: TaskList[]
   onOpenSettings: () => void
+  metadataMap: Record<string, TaskMetadata>
+  mits: string[]
 }
 
-export function PlanView({ signedIn, taskLists, onOpenSettings }: PlanViewProps) {
+export function PlanView({ signedIn, taskLists, onOpenSettings, metadataMap, mits }: PlanViewProps) {
   const { events, loading: eventsLoading, refresh: refreshEvents } = useCalendar(signedIn)
   const { plan, state, error, generatePlan, confirmPlan, rejectBlock, rejectTask, reset, startManualPlan, addBlock, editBlock } = usePlanner()
   const [settings, setSettings] = useState<PlannerSettings | null>(null)
@@ -74,7 +76,7 @@ export function PlanView({ signedIn, taskLists, onOpenSettings }: PlanViewProps)
       }
     }
 
-    generatePlan(allTasks, events, settings)
+    generatePlan(allTasks, events, settings, mits, metadataMap)
   }
 
   const handleConfirm = () => {
