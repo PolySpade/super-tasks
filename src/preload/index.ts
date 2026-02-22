@@ -29,7 +29,7 @@ const api = {
     ipcRenderer.invoke('calendar:get-events', calendarId, timeMin, timeMax),
   createCalendarEvent: (
     calendarId: string,
-    event: { summary: string; start: string; end: string; description?: string }
+    event: { summary: string; start: string; end: string; description?: string; colorId?: string }
   ) => ipcRenderer.invoke('calendar:create-event', calendarId, event),
   deleteCalendarEvent: (calendarId: string, eventId: string) =>
     ipcRenderer.invoke('calendar:delete-event', calendarId, eventId),

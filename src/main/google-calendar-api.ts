@@ -40,7 +40,7 @@ export async function getEvents(calendarId: string, timeMin: string, timeMax: st
 
 export async function createEvent(
   calendarId: string,
-  event: { summary: string; start: string; end: string; description?: string }
+  event: { summary: string; start: string; end: string; description?: string; colorId?: string }
 ) {
   const api = getCalendarApi()
   const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone
@@ -49,6 +49,7 @@ export async function createEvent(
     requestBody: {
       summary: event.summary,
       description: event.description,
+      colorId: event.colorId,
       start: { dateTime: event.start, timeZone },
       end: { dateTime: event.end, timeZone }
     }

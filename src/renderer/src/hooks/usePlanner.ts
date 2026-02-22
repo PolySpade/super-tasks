@@ -3,6 +3,16 @@ import { DayPlan, ContextBlock, CalendarEvent, Task, PlannerSettings } from '../
 
 type PlanState = 'idle' | 'generating' | 'review' | 'confirming' | 'done' | 'error'
 
+function getBlockColorId(blockName: string): string {
+  const name = blockName.toLowerCase()
+  if (name.includes('deep work') || name.includes('focus')) return '9'
+  if (name.includes('communication') || name.includes('meeting')) return '4'
+  if (name.includes('admin') || name.includes('planning')) return '2'
+  if (name.includes('creative')) return '3'
+  if (name.includes('review')) return '7'
+  return '6'
+}
+
 function addMinutesToTime(time: string, minutes: number): string {
   const [h, m] = time.split(':').map(Number)
   const total = h * 60 + m + minutes
@@ -152,7 +162,8 @@ export function usePlanner() {
             summary: block.blockName,
             start: `${today}T${block.start}:00`,
             end: `${today}T${block.end}:00`,
-            description
+            description,
+            colorId: getBlockColorId(block.blockName)
           })
           if (!result.success) {
             throw new Error(result.error || `Failed to create event: ${block.blockName}`)

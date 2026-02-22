@@ -172,7 +172,7 @@ export function registerIpcHandlers(): void {
     async (
       _event,
       calendarId: string,
-      eventData: { summary: string; start: string; end: string; description?: string }
+      eventData: { summary: string; start: string; end: string; description?: string; colorId?: string }
     ) => {
       try {
         const created = await createEvent(calendarId, eventData)

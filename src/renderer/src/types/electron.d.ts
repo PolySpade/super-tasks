@@ -12,7 +12,7 @@ interface ElectronAPI {
   toggleTask: (taskListId: string, taskId: string, completed: boolean) => Promise<{ success: boolean; data?: any; error?: string }>
   getCalendars: () => Promise<{ success: boolean; data?: any[]; error?: string }>
   getCalendarEvents: (calendarId: string, timeMin: string, timeMax: string) => Promise<{ success: boolean; data?: any[]; error?: string }>
-  createCalendarEvent: (calendarId: string, event: { summary: string; start: string; end: string; description?: string }) => Promise<{ success: boolean; data?: any; error?: string }>
+  createCalendarEvent: (calendarId: string, event: { summary: string; start: string; end: string; description?: string; colorId?: string }) => Promise<{ success: boolean; data?: any; error?: string }>
   updateCalendarEvent: (calendarId: string, eventId: string, updates: { start?: string; end?: string; summary?: string; description?: string; colorId?: string }) => Promise<{ success: boolean; data?: any; error?: string }>
   deleteCalendarEvent: (calendarId: string, eventId: string) => Promise<{ success: boolean; error?: string }>
   validateApiKey: (provider: string, apiKey: string) => Promise<{ success: boolean; error?: string }>
