@@ -64,6 +64,7 @@ function TrayApp() {
   const [focusMode, setFocusMode] = useState<'pomodoro' | 'timebox'>('pomodoro')
   const [focusTimeBox, setFocusTimeBox] = useState<number | undefined>()
   const [miniTimer, setMiniTimer] = useState(false)
+  const [dashboardKey, setDashboardKey] = useState(0)
 
   const error = listsError || tasksError
 
@@ -115,6 +116,7 @@ function TrayApp() {
       window.api.openCalendarWindow()
       return
     }
+    if (newTab === 'dashboard') setDashboardKey((k) => k + 1)
     setTab(newTab)
     setView(newTab)
     setSelectedTask(null)
@@ -139,7 +141,9 @@ function TrayApp() {
   }
 
   const handleBackFromDetail = () => {
-    setView(tab === 'calendar' ? 'dashboard' : tab)
+    const target = tab === 'calendar' ? 'dashboard' : tab
+    if (target === 'dashboard') setDashboardKey((k) => k + 1)
+    setView(target)
     setSelectedTask(null)
   }
 
@@ -310,6 +314,7 @@ function TrayApp() {
             </div>
           ) : (
             <Dashboard
+              key={dashboardKey}
               signedIn={signedIn}
               taskLists={taskLists}
               onNavigateToPlan={() => handleTabChange('plan')}

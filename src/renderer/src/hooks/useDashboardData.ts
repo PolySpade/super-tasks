@@ -125,7 +125,7 @@ export function useDashboardData(signedIn: boolean, taskLists: TaskList[]): Dash
   const weeklyByList = useMemo<WeeklyByList[]>(() => {
     const map = new Map<string, number>()
     for (const t of allTasks) {
-      if (t.status === 'needsAction' && t.due && isWithinWeek(t.due, today)) {
+      if (t.status === 'needsAction') {
         const name = t.listTitle || 'Unknown'
         map.set(name, (map.get(name) || 0) + 1)
       }
@@ -133,7 +133,7 @@ export function useDashboardData(signedIn: boolean, taskLists: TaskList[]): Dash
     return Array.from(map.entries())
       .map(([name, count]) => ({ name, count }))
       .sort((a, b) => b.count - a.count)
-  }, [allTasks, today])
+  }, [allTasks])
 
   return {
     stats,

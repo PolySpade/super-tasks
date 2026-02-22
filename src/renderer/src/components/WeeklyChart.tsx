@@ -13,18 +13,20 @@ export function WeeklyChart({ data }: WeeklyChartProps) {
     )
   }
 
+  const chartHeight = Math.max(100, data.length * 32 + 16)
+
   return (
     <div className="weekly-chart">
-      <div className="weekly-chart-label">This Week by List</div>
-      <ResponsiveContainer width="100%" height={150}>
+      <div className="weekly-chart-label">Pending by List</div>
+      <ResponsiveContainer width="100%" height={chartHeight}>
         <BarChart
           data={data}
           layout="vertical"
-          margin={{ top: 4, right: 12, bottom: 4, left: 4 }}
+          margin={{ top: 4, right: 12, bottom: 4, left: 0 }}
         >
           <XAxis
             type="number"
-            tick={{ fill: '#8888a8', fontSize: 11 }}
+            tick={{ fill: '#c0c0d0', fontSize: 11 }}
             axisLine={false}
             tickLine={false}
             allowDecimals={false}
@@ -32,10 +34,11 @@ export function WeeklyChart({ data }: WeeklyChartProps) {
           <YAxis
             type="category"
             dataKey="name"
-            tick={{ fill: '#8888a8', fontSize: 11 }}
+            tick={{ fill: '#e0e0ec', fontSize: 10 }}
             axisLine={false}
             tickLine={false}
-            width={80}
+            width={110}
+            tickFormatter={(value: string) => value.length > 16 ? value.slice(0, 15) + '…' : value}
           />
           <Bar
             dataKey="count"
