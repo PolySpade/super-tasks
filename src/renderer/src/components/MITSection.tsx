@@ -1,13 +1,13 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Star, Plus, X, Bug } from 'lucide-react'
-import { Task } from '../types'
+import { Task, TaskList } from '../types'
 import { MITPicker } from './MITPicker'
 
 interface MITSectionProps {
   mits: string[]
-  allTasks: Task[]
+  taskLists: TaskList[]
   onSetMITs: (taskIds: string[]) => void
-  onSelectTask: (task: Task) => void
+  onSelectTask?: (task: Task) => void
 }
 
 function findTask(tasks: Task[], id: string): Task | undefined {
@@ -21,11 +21,28 @@ function findTask(tasks: Task[], id: string): Task | undefined {
   return undefined
 }
 
-export function MITSection({ mits, allTasks, onSetMITs, onSelectTask }: MITSectionProps) {
+export function MITSection({ mits, taskLists, onSetMITs, onSelectTask }: MITSectionProps) {
   const [showPicker, setShowPicker] = useState(false)
+  const [allTasksFromAllLists, setAllTasksFromAllLists] = useState<Task[]>([])
+
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      const all: Task[] = []
+      for (const list of taskLists) {
+        const res = await window.api.getTasks(list.id)
+        if (cancelled) return
+        if (res.success && res.data) {
+          all.push(...res.data)
+        }
+      }
+      setAllTasksFromAllLists(all)
+    })()
+    return () => { cancelled = true }
+  }, [taskLists, mits])
 
   const mitTasks = mits
-    .map((id) => findTask(allTasks, id))
+    .map((id) => findTask(allTasksFromAllLists, id))
     .filter((t): t is Task => t !== undefined && t.status !== 'completed')
 
   const handleRemove = (taskId: string) => {
@@ -53,7 +70,7 @@ export function MITSection({ mits, allTasks, onSetMITs, onSelectTask }: MITSecti
             <div
               key={task.id}
               className="mit-item"
-              onClick={() => onSelectTask(task)}
+              onClick={() => onSelectTask?.(task)}
             >
               {i === 0 && (
                 <span className="mit-frog" title="Eat the Frog — do this first!">
@@ -79,7 +96,7 @@ export function MITSection({ mits, allTasks, onSetMITs, onSelectTask }: MITSecti
 
       {showPicker && (
         <MITPicker
-          allTasks={allTasks}
+          taskLists={taskLists}
           currentMITs={mits}
           onSave={(ids) => {
             onSetMITs(ids)

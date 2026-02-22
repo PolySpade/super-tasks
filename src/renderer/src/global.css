@@ -3909,6 +3909,10 @@ body {
 /* ═══════════════════════════════════════ */
 /* MIT Picker Modal                       */
 /* ═══════════════════════════════════════ */
+.mit-picker-overlay {
+  z-index: 500;
+}
+
 .mit-picker {
   max-width: 320px;
   max-height: 460px;
@@ -3934,11 +3938,11 @@ body {
   display: flex;
   gap: 4px;
   margin-bottom: 10px;
+  flex-wrap: wrap;
 }
 
 .mit-picker-tab {
-  flex: 1;
-  padding: 5px;
+  padding: 5px 10px;
   background: transparent;
   border: 1px solid var(--border);
   border-radius: 4px;
@@ -4003,6 +4007,16 @@ body {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.mit-picker-item-list {
+  font-size: 10px;
+  color: var(--text-tertiary);
+  background: var(--bg-tertiary);
+  padding: 1px 6px;
+  border-radius: 3px;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 /* ═══════════════════════════════════════ */
@@ -5215,7 +5229,8 @@ body {
   max-width: 420px;
   width: 100%;
   margin: 0 auto;
-  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
 }
 
 .ritual-header {
@@ -5267,6 +5282,8 @@ body {
 
 .ritual-body {
   flex: 1;
+  overflow-y: auto;
+  min-height: 0;
 }
 
 .ritual-step {
@@ -5294,6 +5311,7 @@ body {
   background: var(--glass-1);
   border-radius: 8px;
   border: 1px solid var(--border);
+  flex-wrap: wrap;
 }
 
 .ritual-task-item.clickable {
@@ -5351,6 +5369,60 @@ body {
   color: var(--text-tertiary);
   text-align: center;
   margin-bottom: 12px;
+}
+
+.ritual-energy-dot {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 10px;
+  font-weight: 600;
+  color: #fff;
+  padding: 2px 8px;
+  border-radius: 10px;
+  flex-shrink: 0;
+  text-transform: capitalize;
+}
+
+.ritual-energy-unset {
+  background: var(--bg-tertiary);
+  color: var(--text-tertiary);
+}
+
+.ritual-energy-picker {
+  display: flex;
+  gap: 6px;
+  padding: 6px 0 2px;
+  width: 100%;
+}
+
+.ritual-energy-option {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.ritual-energy-option:hover {
+  border-color: var(--energy-color);
+  color: var(--energy-color);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.ritual-energy-option.active {
+  border-color: var(--energy-color);
+  background: var(--energy-color);
+  color: #fff;
 }
 
 .ritual-event-item {

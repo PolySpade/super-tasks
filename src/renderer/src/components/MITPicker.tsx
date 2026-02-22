@@ -1,9 +1,10 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { Search, Star } from 'lucide-react'
-import { Task } from '../types'
+import { Task, TaskList } from '../types'
 
 interface MITPickerProps {
-  allTasks: Task[]
+  taskLists: TaskList[]
   currentMITs: string[]
   onSave: (taskIds: string[]) => void
   onClose: () => void
@@ -11,30 +12,59 @@ interface MITPickerProps {
 
 const MAX_MITS = 3
 
-export function MITPicker({ allTasks, currentMITs, onSave, onClose }: MITPickerProps) {
+export function MITPicker({ taskLists, currentMITs, onSave, onClose }: MITPickerProps) {
   const [selected, setSelected] = useState<string[]>([...currentMITs])
   const [search, setSearch] = useState('')
-  const [dateMode, setDateMode] = useState<'today' | 'tomorrow'>('today')
+  const [activeListId, setActiveListId] = useState<string>('all')
+  const [tasksByList, setTasksByList] = useState<Record<string, Task[]>>({})
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      setLoading(true)
+      const result: Record<string, Task[]> = {}
+      for (const list of taskLists) {
+        const res = await window.api.getTasks(list.id)
+        if (cancelled) return
+        if (res.success && res.data) {
+          result[list.id] = res.data
+        }
+      }
+      setTasksByList(result)
+      setLoading(false)
+    })()
+    return () => { cancelled = true }
+  }, [taskLists])
 
   const incompleteTasks = useMemo(() => {
-    const flat: Task[] = []
-    const flatten = (list: Task[]): void => {
-      for (const t of list) {
-        if (t.status === 'needsAction') flat.push(t)
-        if (t.children) flatten(t.children)
+    const flat: { task: Task; listId: string; listTitle: string }[] = []
+    const flatten = (tasks: Task[], listId: string, listTitle: string): void => {
+      for (const t of tasks) {
+        if (t.status === 'needsAction') flat.push({ task: t, listId, listTitle })
+        if (t.children) flatten(t.children, listId, listTitle)
       }
     }
-    flatten(allTasks)
+    for (const list of taskLists) {
+      const tasks = tasksByList[list.id]
+      if (tasks) flatten(tasks, list.id, list.title)
+    }
     return flat
-  }, [allTasks])
+  }, [tasksByList, taskLists])
 
   const filtered = useMemo(() => {
-    if (!search.trim()) return incompleteTasks
-    const q = search.toLowerCase()
-    return incompleteTasks.filter(
-      (t) => t.title.toLowerCase().includes(q) || (t.notes && t.notes.toLowerCase().includes(q))
-    )
-  }, [incompleteTasks, search])
+    let items = incompleteTasks
+    if (activeListId !== 'all') {
+      items = items.filter((i) => i.listId === activeListId)
+    }
+    if (search.trim()) {
+      const q = search.toLowerCase()
+      items = items.filter(
+        (i) => i.task.title.toLowerCase().includes(q) || (i.task.notes && i.task.notes.toLowerCase().includes(q))
+      )
+    }
+    return items
+  }, [incompleteTasks, search, activeListId])
 
   const toggleTask = (taskId: string) => {
     if (selected.includes(taskId)) {
@@ -44,8 +74,8 @@ export function MITPicker({ allTasks, currentMITs, onSave, onClose }: MITPickerP
     }
   }
 
-  return (
-    <div className="plan-confirm-overlay" onClick={onClose}>
+  return createPortal(
+    <div className="plan-confirm-overlay mit-picker-overlay" onClick={onClose}>
       <div className="plan-confirm-card mit-picker" onClick={(e) => e.stopPropagation()}>
         <div className="mit-picker-header">
           <Star size={14} />
@@ -54,17 +84,20 @@ export function MITPicker({ allTasks, currentMITs, onSave, onClose }: MITPickerP
 
         <div className="mit-picker-tabs">
           <button
-            className={`mit-picker-tab ${dateMode === 'today' ? 'active' : ''}`}
-            onClick={() => setDateMode('today')}
+            className={`mit-picker-tab ${activeListId === 'all' ? 'active' : ''}`}
+            onClick={() => setActiveListId('all')}
           >
-            Today
+            All Lists
           </button>
-          <button
-            className={`mit-picker-tab ${dateMode === 'tomorrow' ? 'active' : ''}`}
-            onClick={() => setDateMode('tomorrow')}
-          >
-            Tomorrow
-          </button>
+          {taskLists.map((list) => (
+            <button
+              key={list.id}
+              className={`mit-picker-tab ${activeListId === list.id ? 'active' : ''}`}
+              onClick={() => setActiveListId(list.id)}
+            >
+              {list.title}
+            </button>
+          ))}
         </div>
 
         <div className="schedule-modal-search">
@@ -79,25 +112,30 @@ export function MITPicker({ allTasks, currentMITs, onSave, onClose }: MITPickerP
         </div>
 
         <div className="mit-picker-list">
-          {filtered.length === 0 ? (
+          {loading ? (
+            <div className="schedule-modal-empty"><div className="spinner" /></div>
+          ) : filtered.length === 0 ? (
             <div className="schedule-modal-empty">No incomplete tasks found</div>
           ) : (
-            filtered.map((task) => {
-              const isSelected = selected.includes(task.id)
+            filtered.map((item) => {
+              const isSelected = selected.includes(item.task.id)
               const isDisabled = !isSelected && selected.length >= MAX_MITS
               return (
                 <label
-                  key={task.id}
+                  key={item.task.id}
                   className={`mit-picker-item ${isSelected ? 'selected' : ''} ${isDisabled ? 'disabled' : ''}`}
                 >
                   <input
                     type="checkbox"
                     checked={isSelected}
-                    onChange={() => toggleTask(task.id)}
+                    onChange={() => toggleTask(item.task.id)}
                     disabled={isDisabled}
                   />
                   <span className="plan-list-check" />
-                  <span className="mit-picker-item-title">{task.title}</span>
+                  <span className="mit-picker-item-title">{item.task.title}</span>
+                  {activeListId === 'all' && (
+                    <span className="mit-picker-item-list">{item.listTitle}</span>
+                  )}
                 </label>
               )
             })
@@ -116,6 +154,7 @@ export function MITPicker({ allTasks, currentMITs, onSave, onClose }: MITPickerP
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }

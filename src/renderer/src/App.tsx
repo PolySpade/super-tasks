@@ -306,7 +306,7 @@ function TrayApp() {
           onBack={() => setView('dashboard')}
         />
       ) : view === 'timer' ? (
-        <TimerView allTasks={allTasks} onToggleMini={handleToggleMiniTimer} />
+        <TimerView taskLists={taskLists} onToggleMini={handleToggleMiniTimer} />
       ) : view === 'weekly-review' ? (
         <WeeklyReview
           signedIn={signedIn}
@@ -446,14 +446,13 @@ function TrayApp() {
         <DailyRitual
           signedIn={signedIn}
           taskLists={taskLists}
-          allTasks={allTasks}
           mits={mits}
           onSetMITs={setMITs}
           onComplete={completeRitual}
           onDismiss={dismissRitual}
-          onSelectTask={handleSelectTask}
           onNavigateToPlan={() => { completeRitual(); handleTabChange('plan') }}
           metadataMap={metadataMap}
+          onSetMetadata={setMetadata}
         />
       )}
     </div>

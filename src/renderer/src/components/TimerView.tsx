@@ -1,10 +1,10 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { Play, Pause, SkipForward, Square, Flame, ChevronDown, Minimize2, Maximize2 } from 'lucide-react'
-import { Task, PomodoroConfig, FocusStats } from '../types'
+import { Task, TaskList, PomodoroConfig, FocusStats } from '../types'
 import { usePomodoroTimer, PomodoroPhase } from '../hooks/usePomodoroTimer'
 
 interface TimerViewProps {
-  allTasks: Task[]
+  taskLists: TaskList[]
   mini?: boolean
   onToggleMini?: () => void
 }
@@ -45,18 +45,40 @@ function flattenTasks(tasks: Task[]): Task[] {
   return flat
 }
 
-export function TimerView({ allTasks, mini, onToggleMini }: TimerViewProps) {
+export function TimerView({ taskLists, mini, onToggleMini }: TimerViewProps) {
   const [config, setConfig] = useState<PomodoroConfig | null>(null)
   const [stats, setStats] = useState<FocusStats | null>(null)
+  const [selectedListId, setSelectedListId] = useState<string>('')
   const [selectedTaskId, setSelectedTaskId] = useState<string>('')
   const [totalMinutes, setTotalMinutes] = useState(0)
   const [started, setStarted] = useState(false)
   const workStartRef = useRef<string>('')
   const totalMinutesRef = useRef(0)
+  const [tasksByList, setTasksByList] = useState<{ task: Task; listId: string; listTitle: string }[]>([])
 
-  const incompleteTasks = flattenTasks(allTasks)
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      const items: { task: Task; listId: string; listTitle: string }[] = []
+      for (const list of taskLists) {
+        const res = await window.api.getTasks(list.id)
+        if (cancelled) return
+        if (res.success && res.data) {
+          for (const t of flattenTasks(res.data)) {
+            items.push({ task: t, listId: list.id, listTitle: list.title })
+          }
+        }
+      }
+      setTasksByList(items)
+    })()
+    return () => { cancelled = true }
+  }, [taskLists])
 
-  const selectedTask = incompleteTasks.find((t) => t.id === selectedTaskId)
+  const incompleteTasks = selectedListId
+    ? tasksByList.filter((i) => i.listId === selectedListId)
+    : tasksByList
+
+  const selectedTask = tasksByList.find((i) => i.task.id === selectedTaskId)?.task
 
   const handleWorkComplete = useCallback(async () => {
     if (!config) return
@@ -220,7 +242,20 @@ export function TimerView({ allTasks, mini, onToggleMini }: TimerViewProps) {
           </button>
         )}
 
-        {/* Task picker */}
+        {/* List & task picker */}
+        <div className="timer-task-picker">
+          <ChevronDown size={12} />
+          <select
+            value={selectedListId}
+            onChange={(e) => { setSelectedListId(e.target.value); setSelectedTaskId('') }}
+            disabled={started}
+          >
+            <option value="">All lists</option>
+            {taskLists.map((l) => (
+              <option key={l.id} value={l.id}>{l.title}</option>
+            ))}
+          </select>
+        </div>
         <div className="timer-task-picker">
           <ChevronDown size={12} />
           <select
@@ -229,8 +264,10 @@ export function TimerView({ allTasks, mini, onToggleMini }: TimerViewProps) {
             disabled={started}
           >
             <option value="">No task — just focus</option>
-            {incompleteTasks.map((t) => (
-              <option key={t.id} value={t.id}>{t.title}</option>
+            {incompleteTasks.map((i) => (
+              <option key={i.task.id} value={i.task.id}>
+                {i.task.title}{!selectedListId ? ` — ${i.listTitle}` : ''}
+              </option>
             ))}
           </select>
         </div>

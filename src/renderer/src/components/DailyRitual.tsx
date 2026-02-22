@@ -1,19 +1,18 @@
 import { useState, useEffect, useMemo } from 'react'
-import { X, ChevronRight, ChevronLeft, CheckCircle2, Trash2, Sparkles, Calendar, Zap, Trophy } from 'lucide-react'
-import { Task, TaskList, TaskMetadata } from '../types'
+import { X, ChevronRight, ChevronLeft, Trash2, Sparkles, Calendar, Zap, Trophy, ChevronDown } from 'lucide-react'
+import { Task, TaskList, TaskMetadata, EnergyLevel } from '../types'
 import { MITSection } from './MITSection'
 
 interface DailyRitualProps {
   signedIn: boolean
   taskLists: TaskList[]
-  allTasks: Task[]
   mits: string[]
   onSetMITs: (taskIds: string[]) => void
   onComplete: () => void
   onDismiss: () => void
-  onSelectTask: (task: Task) => void
   onNavigateToPlan: () => void
   metadataMap: Record<string, TaskMetadata>
+  onSetMetadata: (taskId: string, partial: Partial<TaskMetadata>) => void
 }
 
 function flattenTasks(tasks: Task[]): Task[] {
@@ -34,24 +33,54 @@ const STEP_LABELS = [
   'Ready to Go!'
 ]
 
+const ENERGY_OPTIONS: { value: EnergyLevel; label: string; color: string }[] = [
+  { value: 'high', label: 'High', color: 'var(--danger)' },
+  { value: 'medium', label: 'Medium', color: 'var(--warning)' },
+  { value: 'low', label: 'Low', color: 'var(--success)' }
+]
+
 export function DailyRitual({
   signedIn,
   taskLists,
-  allTasks,
   mits,
   onSetMITs,
   onComplete,
   onDismiss,
-  onSelectTask,
   onNavigateToPlan,
-  metadataMap
+  metadataMap,
+  onSetMetadata
 }: DailyRitualProps) {
   const [step, setStep] = useState(0)
   const [droppedIds, setDroppedIds] = useState<Set<string>>(new Set())
   const [events, setEvents] = useState<any[]>([])
   const [focusStats, setFocusStats] = useState<{ todayMinutes: number; streak: number } | null>(null)
+  const [allTasksFromAllLists, setAllTasksFromAllLists] = useState<Task[]>([])
+  const [taskListMap, setTaskListMap] = useState<Record<string, string>>({})
+  const [energyPickerTaskId, setEnergyPickerTaskId] = useState<string | null>(null)
+  const [ritualListId, setRitualListId] = useState<string>('')
 
-  const flat = useMemo(() => flattenTasks(allTasks), [allTasks])
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      const all: Task[] = []
+      const listMap: Record<string, string> = {}
+      for (const list of taskLists) {
+        const res = await window.api.getTasks(list.id)
+        if (cancelled) return
+        if (res.success && res.data) {
+          all.push(...res.data)
+          for (const t of flattenTasks(res.data)) {
+            listMap[t.id] = list.id
+          }
+        }
+      }
+      setAllTasksFromAllLists(all)
+      setTaskListMap(listMap)
+    })()
+    return () => { cancelled = true }
+  }, [taskLists])
+
+  const flat = useMemo(() => flattenTasks(allTasksFromAllLists), [allTasksFromAllLists])
 
   // Yesterday's incomplete tasks
   const yesterday = useMemo(() => {
@@ -111,6 +140,9 @@ export function DailyRitual({
   const canPrev = step > 0
   const todayStr = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })
   const incompleteTasks = flat.filter((t) => t.status !== 'completed')
+  const filteredIncomplete = ritualListId
+    ? incompleteTasks.filter((t) => taskListMap[t.id] === ritualListId)
+    : incompleteTasks
   const completedToday = flat.filter((t) => t.status === 'completed' && t.completed?.startsWith(new Date().toISOString().split('T')[0]))
 
   return (
@@ -164,9 +196,8 @@ export function DailyRitual({
             <div className="ritual-step">
               <MITSection
                 mits={mits}
-                allTasks={allTasks}
+                taskLists={taskLists}
                 onSetMITs={onSetMITs}
-                onSelectTask={onSelectTask}
               />
             </div>
           )}
@@ -175,21 +206,60 @@ export function DailyRitual({
           {step === 2 && (
             <div className="ritual-step">
               <div className="ritual-energy-info">
-                Tap a task to set its energy level in the detail view.
+                Tap a task to set its energy level.
+              </div>
+              <div className="timer-task-picker">
+                <ChevronDown size={12} />
+                <select
+                  value={ritualListId}
+                  onChange={(e) => setRitualListId(e.target.value)}
+                >
+                  <option value="">All lists</option>
+                  {taskLists.map((l) => (
+                    <option key={l.id} value={l.id}>{l.title}</option>
+                  ))}
+                </select>
               </div>
               <div className="ritual-task-list">
-                {incompleteTasks.slice(0, 8).map((t) => (
+                {filteredIncomplete.map((t) => (
                   <div
                     key={t.id}
                     className="ritual-task-item clickable"
-                    onClick={() => onSelectTask(t)}
+                    onClick={() => setEnergyPickerTaskId(energyPickerTaskId === t.id ? null : t.id)}
                   >
                     <span className="ritual-task-title">{t.title}</span>
-                    {metadataMap[t.id]?.energyLevel && (
-                      <span className={`energy-badge energy-${metadataMap[t.id].energyLevel}`}>
+                    {metadataMap[t.id]?.energyLevel ? (
+                      <span
+                        className="ritual-energy-dot"
+                        style={{ background: ENERGY_OPTIONS.find((e) => e.value === metadataMap[t.id].energyLevel)?.color }}
+                        title={metadataMap[t.id].energyLevel}
+                      >
                         <Zap size={10} />
                         {metadataMap[t.id].energyLevel}
                       </span>
+                    ) : (
+                      <span className="ritual-energy-dot ritual-energy-unset">
+                        <Zap size={10} />
+                      </span>
+                    )}
+                    {energyPickerTaskId === t.id && (
+                      <div className="ritual-energy-picker" onClick={(e) => e.stopPropagation()}>
+                        {ENERGY_OPTIONS.map((opt) => (
+                          <button
+                            key={opt.value}
+                            className={`ritual-energy-option ${metadataMap[t.id]?.energyLevel === opt.value ? 'active' : ''}`}
+                            style={{ '--energy-color': opt.color } as React.CSSProperties}
+                            onClick={() => {
+                              const newVal = metadataMap[t.id]?.energyLevel === opt.value ? undefined : opt.value
+                              onSetMetadata(t.id, { energyLevel: newVal })
+                              setEnergyPickerTaskId(null)
+                            }}
+                          >
+                            <Zap size={10} />
+                            {opt.label}
+                          </button>
+                        ))}
+                      </div>
                     )}
                   </div>
                 ))}

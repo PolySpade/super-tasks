@@ -146,7 +146,7 @@ export function Dashboard({
 
           <MITSection
             mits={mits}
-            allTasks={allTasks}
+            taskLists={taskLists}
             onSetMITs={onSetMITs}
             onSelectTask={onSelectTask}
           />
