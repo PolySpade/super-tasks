@@ -195,6 +195,10 @@ function TrayApp() {
       return
     }
     if (newTab === 'dashboard') setDashboardKey((k) => k + 1)
+    if (newTab === 'tasks') {
+      refreshLists()
+      refreshTasks()
+    }
     setTab(newTab)
     setView(newTab)
     setSelectedTask(null)

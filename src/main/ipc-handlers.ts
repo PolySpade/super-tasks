@@ -37,7 +37,9 @@ import {
   getTodaysHabits,
   completeHabit,
   uncompleteHabit,
-  getAllStreaks
+  getAllStreaks,
+  isDueToday,
+  setHabitInstance
 } from './habit-store'
 import { hideWindow, toggleCalendarWindow, setAlwaysOnTop, getAlwaysOnTop, setWindowSize, getWindowSize } from './window'
 import {
@@ -611,9 +613,28 @@ export function registerIpcHandlers(): void {
     }
   })
 
-  ipcMain.handle('habits:create', (_event, habit: any) => {
+  ipcMain.handle('habits:create', async (_event, habit: any) => {
     try {
       const created = createHabit(habit)
+      const today = new Date().toISOString().split('T')[0]
+      if (isDueToday(created, today)) {
+        try {
+          const task = await createTask(
+            created.taskListId,
+            created.title,
+            `Recurring habit (${created.recurrence})`
+          )
+          if (created.energyLevel || created.timeBoxMinutes) {
+            const meta: any = {}
+            if (created.energyLevel) meta.energyLevel = created.energyLevel
+            if (created.timeBoxMinutes) meta.timeBoxMinutes = created.timeBoxMinutes
+            setTaskMetadata(task.id, meta)
+          }
+          setHabitInstance(created.id, today, task.id)
+        } catch {
+          // Task creation failed — scheduler will retry later
+        }
+      }
       return { success: true, data: created }
     } catch (error: any) {
       return { success: false, error: error.message }
@@ -647,18 +668,32 @@ export function registerIpcHandlers(): void {
     }
   })
 
-  ipcMain.handle('habits:complete', (_event, habitId: string, date: string, taskId?: string) => {
+  ipcMain.handle('habits:complete', async (_event, habitId: string, date: string, taskId?: string) => {
     try {
       completeHabit(habitId, date, taskId)
+      // Also complete the linked Google Task
+      if (taskId) {
+        const habit = getAllHabits().find((h) => h.id === habitId)
+        if (habit?.taskListId) {
+          toggleTaskComplete(habit.taskListId, taskId, true).catch(() => {})
+        }
+      }
       return { success: true }
     } catch (error: any) {
       return { success: false, error: error.message }
     }
   })
 
-  ipcMain.handle('habits:uncomplete', (_event, habitId: string, date: string) => {
+  ipcMain.handle('habits:uncomplete', async (_event, habitId: string, date: string) => {
     try {
+      // Get the taskId before uncompleting
+      const todaysHabits = getTodaysHabits(date)
+      const entry = todaysHabits.find((h) => h.id === habitId)
       uncompleteHabit(habitId, date)
+      // Also uncomplete the linked Google Task
+      if (entry?.taskId) {
+        toggleTaskComplete(entry.taskListId, entry.taskId, false).catch(() => {})
+      }
       return { success: true }
     } catch (error: any) {
       return { success: false, error: error.message }
