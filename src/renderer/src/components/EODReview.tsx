@@ -135,16 +135,13 @@ export function EODReview({ signedIn, taskLists, onDismiss, onUpdateTask }: EODR
           {completedToday.length === 0 ? (
             <div className="eod-empty">No tasks completed today</div>
           ) : (
-            <div className="eod-task-list">
-              {completedToday.slice(0, 8).map((t) => (
+            <div className="eod-task-list eod-task-list-scroll">
+              {completedToday.map((t) => (
                 <div key={t.id} className="eod-task-item completed">
                   <CheckCircle2 size={12} className="stat-icon-success" />
                   <span>{t.title}</span>
                 </div>
               ))}
-              {completedToday.length > 8 && (
-                <div className="eod-more">+{completedToday.length - 8} more</div>
-              )}
             </div>
           )}
         </div>
@@ -156,8 +153,8 @@ export function EODReview({ signedIn, taskLists, onDismiss, onUpdateTask }: EODR
               <ArrowRight size={14} />
               <span>Carrying Over ({carriedOver.length})</span>
             </div>
-            <div className="eod-task-list">
-              {carriedOver.slice(0, 6).map((t) => (
+            <div className="eod-task-list eod-task-list-scroll">
+              {carriedOver.map((t) => (
                 <div key={t.id} className="eod-task-item carried">
                   <span className="eod-carried-title">{t.title}</span>
                   <button
