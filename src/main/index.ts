@@ -10,11 +10,7 @@ import { restoreSession } from './google-auth'
 import { showCaptureWindow } from './quick-capture-window'
 import { startHabitScheduler, stopHabitScheduler } from './habit-scheduler'
 import { startNudgeEngine, stopNudgeEngine } from './nudge-engine'
-import dotenv from 'dotenv'
-import { join } from 'path'
-
-// Load .env from project root
-dotenv.config({ path: join(__dirname, '../../.env') })
+// Env vars are baked in at build time via electron.vite.config.ts define
 
 // Single instance lock
 const gotTheLock = app.requestSingleInstanceLock()

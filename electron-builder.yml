@@ -1,0 +1,36 @@
+appId: com.google-tasks-app
+productName: Google Tasks
+copyright: Copyright © 2024
+
+directories:
+  buildResources: resources
+  output: dist
+
+files:
+  - out/**/*
+  - node_modules/**/*
+  - "!node_modules/**/*.{md,ts,map}"
+  - "!**/.git"
+
+win:
+  icon: resources/icon.ico
+  target:
+    - target: nsis
+      arch:
+        - x64
+    - target: portable
+      arch:
+        - x64
+
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  shortcutName: Google Tasks
+
+portable:
+  artifactName: "${productName}-Portable-${version}.${ext}"
+
+asar: true
+
+extraMetadata:
+  main: ./out/main/index.js
