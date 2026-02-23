@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { X, ArrowRight } from 'lucide-react'
-import { TaskList, Task } from '../types'
+import { TaskList, Task, TaskMetadata } from '../types'
 
 interface RenameProposal {
   taskId: string
@@ -16,11 +16,12 @@ type State = 'idle' | 'generating' | 'preview' | 'applying' | 'done'
 
 interface AIRenameModalProps {
   taskLists: TaskList[]
+  metadataMap: Record<string, TaskMetadata>
   onClose: () => void
   onApplied: () => void
 }
 
-export function AIRenameModal({ taskLists, onClose, onApplied }: AIRenameModalProps) {
+export function AIRenameModal({ taskLists, metadataMap, onClose, onApplied }: AIRenameModalProps) {
   const [state, setState] = useState<State>('idle')
   const [selectedLists, setSelectedLists] = useState<Set<string>>(
     new Set(taskLists.map((l) => l.id))
@@ -50,18 +51,31 @@ export function AIRenameModal({ taskLists, onClose, onApplied }: AIRenameModalPr
     setState('generating')
 
     try {
+      // Build a listId -> title map
+      const listNameMap = new Map(taskLists.map((l) => [l.id, l.title]))
+
       // Fetch tasks from all selected lists
-      const allTasks: { id: string; title: string; notes?: string; listId: string }[] = []
+      const allTasks: { id: string; title: string; notes?: string; due?: string; listId: string; listName?: string; parentTitle?: string; hasSubtasks?: boolean }[] = []
 
       for (const listId of selectedLists) {
         const res = await window.api.getTasks(listId)
         if (res.success && res.data) {
-          const flatten = (tasks: Task[]) => {
+          const listName = listNameMap.get(listId)
+          const flatten = (tasks: Task[], parentTitle?: string) => {
             for (const t of tasks) {
               if (t.status === 'needsAction') {
-                allTasks.push({ id: t.id, title: t.title, notes: t.notes, listId })
+                allTasks.push({
+                  id: t.id,
+                  title: t.title,
+                  notes: t.notes,
+                  due: t.due,
+                  listId,
+                  listName,
+                  parentTitle,
+                  hasSubtasks: !!(t.children && t.children.length > 0)
+                })
               }
-              if (t.children) flatten(t.children)
+              if (t.children) flatten(t.children, t.title)
             }
           }
           flatten(res.data)
@@ -77,7 +91,16 @@ export function AIRenameModal({ taskLists, onClose, onApplied }: AIRenameModalPr
       setTotalTasks(allTasks.length)
 
       const res = await window.api.aiRenameTasks(
-        allTasks.map((t) => ({ id: t.id, title: t.title, notes: t.notes }))
+        allTasks.map((t) => ({
+          id: t.id,
+          title: t.title,
+          notes: t.notes,
+          listName: t.listName,
+          due: t.due,
+          energyLevel: metadataMap[t.id]?.energyLevel,
+          parentTitle: t.parentTitle,
+          hasSubtasks: t.hasSubtasks
+        }))
       )
 
       if (!res.success) {

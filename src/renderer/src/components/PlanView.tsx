@@ -67,16 +67,28 @@ export function PlanView({ signedIn, taskLists, onOpenSettings, metadataMap, mit
   const handleGenerate = async () => {
     if (!settings || selectedListIds.size === 0) return
 
-    // Fetch tasks from all selected lists
+    // Build a listId -> title map
+    const listIdToName = new Map(taskLists.map((l) => [l.id, l.title]))
+
+    // Fetch tasks from all selected lists, tracking which list each task belongs to
     const allTasks: Task[] = []
+    const taskListNames: Record<string, string> = {}
     for (const listId of selectedListIds) {
       const result = await window.api.getTasks(listId)
       if (result.success && result.data) {
+        const listName = listIdToName.get(listId)
+        const assignListName = (tasks: Task[]) => {
+          for (const t of tasks) {
+            if (listName) taskListNames[t.id] = listName
+            if (t.children) assignListName(t.children)
+          }
+        }
+        assignListName(result.data)
         allTasks.push(...result.data)
       }
     }
 
-    generatePlan(allTasks, events, settings, mits, metadataMap)
+    generatePlan(allTasks, events, settings, mits, metadataMap, taskListNames)
   }
 
   const handleConfirm = () => {

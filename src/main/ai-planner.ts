@@ -1,5 +1,6 @@
 import { getSettings, getDecryptedApiKey } from './settings-store'
 import { getHistoricalData } from './time-tracking-store'
+import { getRecentReviews } from './eod-review-store'
 
 interface PlanTask {
   id: string
@@ -43,6 +44,7 @@ interface PlanRequest {
   breakMinutes: number
   mitTaskIds?: string[]
   taskMetadata?: Record<string, { energyLevel?: 'high' | 'medium' | 'low'; timeBoxMinutes?: number }>
+  taskListNames?: Record<string, string>
 }
 
 const PLANNER_SYSTEM_PROMPT = `You are a day planner AI. Given a list of tasks and existing calendar events, create an optimal daily schedule by grouping related tasks into named contextual blocks.
@@ -62,6 +64,9 @@ Rules:
 - Tasks marked with [energy: high] should be scheduled in morning peak hours when energy is highest
 - Tasks marked with [energy: low] should be scheduled after lunch when energy naturally dips
 - Tasks marked with [energy: medium] are flexible and can fill remaining slots
+- Use the [list: ...] tag to understand task domain — group tasks from the same list when contextually sensible
+- Tasks marked [subtask of: ...] should be scheduled near their parent task when possible
+- If yesterday's review context is provided, use it to calibrate how ambitiously to plan the day (e.g. lower rating = lighter load)
 - Return ONLY valid JSON, no markdown fences or extra text
 
 Return JSON in this exact format:
@@ -91,6 +96,7 @@ function buildPrompt(request: PlanRequest): string {
 
   const mitSet = new Set(request.mitTaskIds || [])
   const meta = request.taskMetadata || {}
+  const listNames = request.taskListNames || {}
 
   const tasksList = request.tasks.length > 0
     ? request.tasks.map((t) => {
@@ -99,6 +105,7 @@ function buildPrompt(request: PlanRequest): string {
         const tm = meta[t.id]
         if (tm?.energyLevel) desc += ` [energy: ${tm.energyLevel}]`
         if (tm?.timeBoxMinutes) desc += ` [timebox: ${tm.timeBoxMinutes}min]`
+        if (listNames[t.id]) desc += ` [list: ${listNames[t.id]}]`
         desc += ` "${t.title}"`
         if (t.due) desc += ` (due: ${t.due})`
         if (t.notes) desc += ` — Notes: ${t.notes}`
@@ -123,6 +130,22 @@ function buildPrompt(request: PlanRequest): string {
     }
   }
 
+  // Fetch yesterday's EOD review for context
+  let reviewContext = ''
+  try {
+    const recentReviews = getRecentReviews(1)
+    if (recentReviews.length > 0) {
+      const r = recentReviews[0]
+      reviewContext = `\nYesterday's review (${r.date}):
+- Productivity rating: ${r.rating}/5
+- Tasks completed: ${r.completedCount}, carried over: ${r.carriedOverCount}
+- Focus minutes: ${r.focusMinutes}
+- Reflection: "${r.reflection}"`
+    }
+  } catch {
+    // EOD review data unavailable — skip
+  }
+
   return `Plan my day for ${request.date}.
 
 Working hours: ${request.workingHours.start} to ${request.workingHours.end}
@@ -134,7 +157,8 @@ ${eventsList}
 
 Tasks to schedule:
 ${tasksList}
-${historicalNote}
+${historicalNote}${reviewContext}
+
 Create an optimal schedule. Return JSON only.`
 }
 
@@ -406,8 +430,12 @@ const RENAME_SYSTEM_PROMPT = `You are a task improvement AI. Given a list of tas
 Rules:
 - Make titles concise, action-oriented, and clear (start with a verb)
 - If notes are empty, add a brief 1-line note with context or first step
-- If notes exist, clean them up for clarity but preserve meaning
+- If notes exist, you MUST preserve ALL existing content — URLs, links, numbers, dates, references, and any structured data must remain exactly as-is. Only rephrase surrounding prose for clarity.
+- NEVER remove or shorten URLs, numeric values, IDs, phone numbers, or any reference data from notes
 - Do NOT change the meaning or scope of the task
+- Use the list name as domain context (e.g. a task in "Work" should use professional language, a task in "Health" should use wellness language)
+- Consider due dates to add urgency cues in notes when appropriate
+- For subtasks, ensure the title is clear even without seeing the parent task
 - Return ONLY valid JSON, no markdown fences or extra text
 
 Return JSON in this exact format:
@@ -421,12 +449,23 @@ interface RenameTask {
   id: string
   title: string
   notes?: string
+  listName?: string
+  due?: string
+  energyLevel?: string
+  parentTitle?: string
+  hasSubtasks?: boolean
 }
 
 function buildRenamePrompt(tasks: RenameTask[]): string {
   const tasksList = tasks
     .map((t) => {
-      let desc = `- [${t.id}] Title: "${t.title}"`
+      let desc = `- [${t.id}]`
+      if (t.listName) desc += ` [list: ${t.listName}]`
+      if (t.due) desc += ` [due: ${t.due}]`
+      if (t.energyLevel) desc += ` [energy: ${t.energyLevel}]`
+      if (t.parentTitle) desc += ` [subtask of: "${t.parentTitle}"]`
+      if (t.hasSubtasks) desc += ` [has subtasks]`
+      desc += ` Title: "${t.title}"`
       if (t.notes) desc += ` | Notes: "${t.notes}"`
       else desc += ` | Notes: (empty)`
       return desc

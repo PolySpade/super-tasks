@@ -213,6 +213,7 @@ export function Dashboard({
       {showRename && (
         <AIRenameModal
           taskLists={taskLists}
+          metadataMap={metadataMap}
           onClose={() => setShowRename(false)}
           onApplied={refresh}
         />

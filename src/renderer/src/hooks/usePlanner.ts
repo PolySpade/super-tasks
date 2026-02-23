@@ -32,7 +32,8 @@ export function usePlanner() {
       events: CalendarEvent[],
       settings: PlannerSettings,
       mitTaskIds?: string[],
-      metadataMap?: Record<string, TaskMetadata>
+      metadataMap?: Record<string, TaskMetadata>,
+      taskListNames?: Record<string, string>
     ) => {
       setState('generating')
       setError(null)
@@ -71,7 +72,8 @@ export function usePlanner() {
           },
           breakMinutes: settings.breakDurationMinutes,
           mitTaskIds: mitTaskIds || [],
-          taskMetadata: taskMeta
+          taskMetadata: taskMeta,
+          taskListNames
         })
 
         if (result.success && result.data) {

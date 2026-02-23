@@ -63,7 +63,7 @@ const api = {
   setPomodoroSettings: (partial: any) => ipcRenderer.invoke('focus:set-pomodoro-settings', partial),
 
   // AI rename
-  aiRenameTasks: (tasks: { id: string; title: string; notes?: string }[]) =>
+  aiRenameTasks: (tasks: { id: string; title: string; notes?: string; listName?: string; due?: string; energyLevel?: string; parentTitle?: string; hasSubtasks?: boolean }[]) =>
     ipcRenderer.invoke('tasks:ai-rename', tasks),
 
   // AI subtask generation
