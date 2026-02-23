@@ -129,8 +129,10 @@ const api = {
   getHabitStreaks: () => ipcRenderer.invoke('habits:get-streaks'),
 
   // Quick capture
-  quickCapture: (input: string) => ipcRenderer.invoke('capture:submit', input),
+  quickCapture: (input: string, overrides?: { listId?: string; energyLevel?: string; timeBoxMinutes?: number }) =>
+    ipcRenderer.invoke('capture:submit', input, overrides),
   hideCaptureWindow: () => ipcRenderer.invoke('capture:hide'),
+  setCaptureWindowSize: (width: number, height: number) => ipcRenderer.invoke('capture:set-size', width, height),
 
   // Persona
   getPersona: () => ipcRenderer.invoke('persona:get'),

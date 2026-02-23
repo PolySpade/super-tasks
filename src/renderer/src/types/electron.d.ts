@@ -69,8 +69,9 @@ interface ElectronAPI {
   isPersonaConfigured: () => Promise<{ success: boolean; data?: boolean; error?: string }>
 
   // Quick capture
-  quickCapture: (input: string) => Promise<{ success: boolean; data?: any; error?: string }>
+  quickCapture: (input: string, overrides?: { listId?: string; energyLevel?: string; timeBoxMinutes?: number }) => Promise<{ success: boolean; data?: any; error?: string }>
   hideCaptureWindow: () => Promise<void>
+  setCaptureWindowSize: (width: number, height: number) => Promise<void>
 
   // Time tracking
   getTimeTracking: (taskId: string) => Promise<{ success: boolean; data?: any; error?: string }>

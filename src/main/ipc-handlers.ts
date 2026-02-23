@@ -25,7 +25,7 @@ import {
 import { getMITs, setMITs, clearMITs } from './mit-store'
 import { getTaskTimeData, getAllTimeData, getHistoricalData } from './time-tracking-store'
 import { parseCapture } from './quick-capture-parser'
-import { hideCaptureWindow } from './quick-capture-window'
+import { hideCaptureWindow, setCaptureWindowSize } from './quick-capture-window'
 import { wasDoneToday, saveReview, getRecentReviews, getAverageRating } from './eod-review-store'
 import { wasCompletedToday as ritualCompletedToday, markComplete as markRitualComplete, getHistory as getRitualHistory } from './ritual-store'
 import { getNudgeConfig, setNudgeConfig, setTodaysPlan, reportBreakStart, reportTaskComplete } from './nudge-engine'
@@ -712,14 +712,23 @@ export function registerIpcHandlers(): void {
   })
 
   // Quick capture
-  ipcMain.handle('capture:submit', async (_event, input: string) => {
+  ipcMain.handle('capture:submit', async (_event, input: string, overrides?: { listId?: string; energyLevel?: string; timeBoxMinutes?: number } | null) => {
     try {
       const parsed = await parseCapture(input)
-      const settingsStore = getSettings()
-      const defaultListId = (settingsStore as any).quickCaptureDefaultListId || ''
+      const opts = overrides || {}
 
-      // Get first available list if no default
-      let listId = defaultListId
+      // Apply manual overrides from the capture UI (always wins over parser)
+      const finalEnergy = opts.energyLevel || parsed.energyLevel
+      const finalTime = (typeof opts.timeBoxMinutes === 'number' && opts.timeBoxMinutes > 0)
+        ? opts.timeBoxMinutes
+        : parsed.timeBoxMinutes
+
+      // Use override list if provided, otherwise fall back to default/first
+      let listId = (typeof opts.listId === 'string' && opts.listId.length > 0) ? opts.listId : ''
+      if (!listId) {
+        const settingsStore = getSettings()
+        listId = (settingsStore as any).quickCaptureDefaultListId || ''
+      }
       if (!listId) {
         const lists = await getTaskLists()
         if (lists.length > 0) listId = lists[0].id
@@ -729,13 +738,17 @@ export function registerIpcHandlers(): void {
         return { success: false, error: 'No task list available' }
       }
 
-      const task = await createTask(listId, parsed.title, parsed.notes, parsed.due)
+      const timestamp = new Date().toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })
+      const notes = parsed.notes
+        ? `Created: ${timestamp}\n${parsed.notes}`
+        : `Created: ${timestamp}`
+      const task = await createTask(listId, parsed.title, notes, parsed.due)
 
-      // Set metadata if parsed
-      if (parsed.energyLevel || parsed.timeBoxMinutes) {
+      // Set metadata
+      if (finalEnergy || finalTime) {
         const meta: any = {}
-        if (parsed.energyLevel) meta.energyLevel = parsed.energyLevel
-        if (parsed.timeBoxMinutes) meta.timeBoxMinutes = parsed.timeBoxMinutes
+        if (finalEnergy) meta.energyLevel = finalEnergy
+        if (finalTime) meta.timeBoxMinutes = finalTime
         setTaskMetadata(task.id, meta)
       }
 
@@ -752,6 +765,10 @@ export function registerIpcHandlers(): void {
 
   ipcMain.handle('capture:hide', () => {
     hideCaptureWindow()
+  })
+
+  ipcMain.handle('capture:set-size', (_event, width: number, height: number) => {
+    setCaptureWindowSize(width, height)
   })
 
   // Offline queue

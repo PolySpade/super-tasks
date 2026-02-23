@@ -15,18 +15,19 @@ export function createCaptureWindow(): BrowserWindow {
   const { width: screenWidth, height: screenHeight } = primaryDisplay.workAreaSize
 
   captureWindow = new BrowserWindow({
-    width: 500,
-    height: 64,
-    x: Math.round(screenWidth / 2 - 250),
+    width: 524,
+    height: 88,
+    x: Math.round(screenWidth / 2 - 262),
     y: Math.round(screenHeight / 3),
     show: false,
     frame: false,
     resizable: false,
+    maxHeight: 424,
     skipTaskbar: true,
     alwaysOnTop: true,
     transparent: true,
     backgroundColor: '#00000000',
-    hasShadow: true,
+    hasShadow: false,
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: false
@@ -73,4 +74,12 @@ export function hideCaptureWindow(): void {
 
 export function getCaptureWindow(): BrowserWindow | null {
   return captureWindow
+}
+
+export function setCaptureWindowSize(width: number, height: number): void {
+  if (captureWindow && !captureWindow.isDestroyed()) {
+    captureWindow.setResizable(true)
+    captureWindow.setSize(width, height, true)
+    captureWindow.setResizable(false)
+  }
 }

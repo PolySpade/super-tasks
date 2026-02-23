@@ -62,7 +62,7 @@ function TrayApp() {
     clearError
   } = useTasks(signedIn, selectedListId)
 
-  const { metadataMap, setMetadata } = useTaskMetadata()
+  const { metadataMap, setMetadata, refreshMetadata } = useTaskMetadata()
   const { mits, setMITs, addMIT, removeMIT, isMIT } = useMITs()
   const { shouldShow: autoShowEOD, dismiss: dismissAutoEOD } = useEODReview(signedIn)
   const [manualEOD, setManualEOD] = useState(false)
@@ -116,6 +116,7 @@ function TrayApp() {
     const cleanup = window.api.onWindowShown(() => {
       refreshLists()
       refreshTasks()
+      refreshMetadata()
       // Check offline queue and try to process
       window.api.processOfflineQueue().then(() => {
         window.api.getOfflineQueue().then((res) => {
