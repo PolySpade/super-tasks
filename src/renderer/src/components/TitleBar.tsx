@@ -18,7 +18,7 @@ export function TitleBar({ onSettingsClick, onClose, showBack, onBack, title, is
             <ArrowLeft size={14} />
           </button>
         ) : null}
-        <span className="title-bar-title">{title || 'Google Tasks'}</span>
+        <span className="title-bar-title">{title || 'SuperTasks'}</span>
       </div>
       <div className="title-bar-actions">
         <span

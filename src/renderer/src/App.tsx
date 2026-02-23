@@ -316,7 +316,7 @@ function TrayApp() {
       case 'plan':
         return 'Day Planner'
       case 'dashboard':
-        return 'Google Tasks'
+        return 'SuperTasks'
       case 'deadlines':
         return 'Deadlines'
       case 'timer':
@@ -324,14 +324,14 @@ function TrayApp() {
       case 'weekly-review':
         return 'Weekly Review'
       default:
-        return 'Google Tasks'
+        return 'SuperTasks'
     }
   }
 
   if (!signedIn && !authLoading) {
     return (
       <div className="app">
-        <TitleBar onSettingsClick={() => {}} onClose={handleClose} title="Google Tasks" />
+        <TitleBar onSettingsClick={() => {}} onClose={handleClose} title="SuperTasks" />
         <LoginScreen onSignIn={signIn} loading={authLoading} />
       </div>
     )

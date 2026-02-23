@@ -15,7 +15,7 @@ export function LoginScreen({ onSignIn, loading }: LoginScreenProps) {
             <path d="M14 24l7 7 13-13" stroke="#4285f4" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" fill="none" />
           </svg>
         </div>
-        <h2>Google Tasks</h2>
+        <h2>SuperTasks</h2>
         <p>Sign in to manage your tasks</p>
         <button className="sign-in-btn" onClick={onSignIn} disabled={loading}>
           {loading ? (

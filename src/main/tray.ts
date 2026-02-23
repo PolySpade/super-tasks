@@ -19,7 +19,7 @@ export function createTray(): Tray {
   }
 
   tray = new Tray(icon)
-  tray.setToolTip('Google Tasks')
+  tray.setToolTip('SuperTasks')
 
   tray.on('click', () => {
     toggleWindow(tray!.getBounds())
