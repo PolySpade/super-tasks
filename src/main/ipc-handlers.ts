@@ -11,6 +11,7 @@ import {
 } from './google-tasks-api'
 import { getCalendars, getEvents, createEvent, updateEvent, deleteEvent } from './google-calendar-api'
 import { getSettings, updateSettings } from './settings-store'
+import { getPersona, setPersona, isPersonaConfigured } from './persona-store'
 import { generatePlan, validateApiKey, generateSubtasks, workBackwards, renameTasks } from './ai-planner'
 import { getStartupEnabled, setStartupEnabled } from './startup'
 import {
@@ -378,6 +379,33 @@ export function registerIpcHandlers(): void {
     try {
       const result = await renameTasks({ tasks })
       return { success: true, data: result }
+    } catch (error: any) {
+      return { success: false, error: error.message }
+    }
+  })
+
+  // Persona
+  ipcMain.handle('persona:get', () => {
+    try {
+      const persona = getPersona()
+      return { success: true, data: persona }
+    } catch (error: any) {
+      return { success: false, error: error.message }
+    }
+  })
+
+  ipcMain.handle('persona:set', (_event, partial: any) => {
+    try {
+      const persona = setPersona(partial)
+      return { success: true, data: persona }
+    } catch (error: any) {
+      return { success: false, error: error.message }
+    }
+  })
+
+  ipcMain.handle('persona:is-configured', () => {
+    try {
+      return { success: true, data: isPersonaConfigured() }
     } catch (error: any) {
       return { success: false, error: error.message }
     }

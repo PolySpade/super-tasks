@@ -132,6 +132,11 @@ const api = {
   quickCapture: (input: string) => ipcRenderer.invoke('capture:submit', input),
   hideCaptureWindow: () => ipcRenderer.invoke('capture:hide'),
 
+  // Persona
+  getPersona: () => ipcRenderer.invoke('persona:get'),
+  setPersona: (partial: any) => ipcRenderer.invoke('persona:set', partial),
+  isPersonaConfigured: () => ipcRenderer.invoke('persona:is-configured'),
+
   // Time tracking
   getTimeTracking: (taskId: string) => ipcRenderer.invoke('time-tracking:get', taskId),
   getAllTimeTracking: () => ipcRenderer.invoke('time-tracking:get-all'),

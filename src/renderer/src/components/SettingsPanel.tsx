@@ -36,6 +36,7 @@ export function SettingsPanel({ onSignOut }: SettingsPanelProps) {
     sessionsBeforeLongBreak: 4,
     logToCalendar: false
   })
+  const [persona, setPersona] = useState({ name: '', role: '', workStyle: '', preferences: '' })
 
   useEffect(() => {
     window.api.getStartupEnabled().then((result) => {
@@ -62,6 +63,11 @@ export function SettingsPanel({ onSignOut }: SettingsPanelProps) {
     window.api.getPomodoroSettings().then((result) => {
       if (result.success && result.data) {
         setPomodoro(result.data)
+      }
+    })
+    window.api.getPersona().then((result) => {
+      if (result.success && result.data) {
+        setPersona(result.data)
       }
     })
   }, [])
@@ -124,8 +130,65 @@ export function SettingsPanel({ onSignOut }: SettingsPanelProps) {
     }
   }
 
+  const savePersonaField = (field: string, value: string) => {
+    window.api.setPersona({ [field]: value })
+  }
+
   return (
     <div className="settings-panel">
+      {/* Persona */}
+      <div className="settings-section-label">Persona</div>
+
+      <div className="settings-item settings-item-col">
+        <span>Name</span>
+        <input
+          type="text"
+          className="settings-input"
+          placeholder="e.g. Donald"
+          value={persona.name}
+          onChange={(e) => setPersona((p) => ({ ...p, name: e.target.value }))}
+          onBlur={() => savePersonaField('name', persona.name)}
+        />
+      </div>
+
+      <div className="settings-item settings-item-col">
+        <span>Role</span>
+        <input
+          type="text"
+          className="settings-input"
+          placeholder="e.g. Software Engineer, Student"
+          value={persona.role}
+          onChange={(e) => setPersona((p) => ({ ...p, role: e.target.value }))}
+          onBlur={() => savePersonaField('role', persona.role)}
+        />
+      </div>
+
+      <div className="settings-item settings-item-col">
+        <span>Work Style</span>
+        <textarea
+          className="settings-input"
+          placeholder="e.g. I prefer deep focus blocks in the morning"
+          rows={2}
+          value={persona.workStyle}
+          onChange={(e) => setPersona((p) => ({ ...p, workStyle: e.target.value }))}
+          onBlur={() => savePersonaField('workStyle', persona.workStyle)}
+        />
+      </div>
+
+      <div className="settings-item settings-item-col">
+        <span>Preferences</span>
+        <textarea
+          className="settings-input"
+          placeholder="e.g. I like short tasks first, No meetings before 10am"
+          rows={2}
+          value={persona.preferences}
+          onChange={(e) => setPersona((p) => ({ ...p, preferences: e.target.value }))}
+          onBlur={() => savePersonaField('preferences', persona.preferences)}
+        />
+      </div>
+
+      <div className="settings-divider" />
+
       {/* AI Configuration */}
       <div className="settings-section-label">AI Planner</div>
 

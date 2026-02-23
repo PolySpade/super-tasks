@@ -63,6 +63,11 @@ interface ElectronAPI {
   uncompleteHabit: (habitId: string, date: string) => Promise<{ success: boolean; error?: string }>
   getHabitStreaks: () => Promise<{ success: boolean; data?: any; error?: string }>
 
+  // Persona
+  getPersona: () => Promise<{ success: boolean; data?: { name: string; role: string; workStyle: string; preferences: string }; error?: string }>
+  setPersona: (partial: Partial<{ name: string; role: string; workStyle: string; preferences: string }>) => Promise<{ success: boolean; data?: any; error?: string }>
+  isPersonaConfigured: () => Promise<{ success: boolean; data?: boolean; error?: string }>
+
   // Quick capture
   quickCapture: (input: string) => Promise<{ success: boolean; data?: any; error?: string }>
   hideCaptureWindow: () => Promise<void>

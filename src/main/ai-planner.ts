@@ -1,6 +1,7 @@
 import { getSettings, getDecryptedApiKey } from './settings-store'
 import { getHistoricalData } from './time-tracking-store'
 import { getRecentReviews } from './eod-review-store'
+import { getPersona, isPersonaConfigured } from './persona-store'
 
 interface PlanTask {
   id: string
@@ -47,6 +48,18 @@ interface PlanRequest {
   taskListNames?: Record<string, string>
 }
 
+function buildPersonaContext(): string {
+  if (!isPersonaConfigured()) return ''
+  const p = getPersona()
+  const lines: string[] = []
+  if (p.name) lines.push(`- Name: ${p.name}`)
+  if (p.role) lines.push(`- Role: ${p.role}`)
+  if (p.workStyle) lines.push(`- Work style: ${p.workStyle}`)
+  if (p.preferences) lines.push(`- Preferences: ${p.preferences}`)
+  if (lines.length === 0) return ''
+  return `\nUser persona:\n${lines.join('\n')}`
+}
+
 const PLANNER_SYSTEM_PROMPT = `You are a day planner AI. Given a list of tasks and existing calendar events, create an optimal daily schedule by grouping related tasks into named contextual blocks.
 
 Rules:
@@ -67,6 +80,7 @@ Rules:
 - Use the [list: ...] tag to understand task domain — group tasks from the same list when contextually sensible
 - Tasks marked [subtask of: ...] should be scheduled near their parent task when possible
 - If yesterday's review context is provided, use it to calibrate how ambitiously to plan the day (e.g. lower rating = lighter load)
+- If a user persona is provided, tailor the schedule to their role and work style preferences
 - Return ONLY valid JSON, no markdown fences or extra text
 
 Return JSON in this exact format:
@@ -157,7 +171,7 @@ ${eventsList}
 
 Tasks to schedule:
 ${tasksList}
-${historicalNote}${reviewContext}
+${historicalNote}${reviewContext}${buildPersonaContext()}
 
 Create an optimal schedule. Return JSON only.`
 }
@@ -278,6 +292,7 @@ Rules:
 - Each subtask should be specific and completable in one sitting
 - Estimate minutes realistically (15-120 minutes per subtask)
 - Order subtasks logically (dependencies first)
+- If a user persona is provided, tailor subtask granularity to their experience level and role
 - Return ONLY valid JSON, no markdown fences or extra text
 
 Return JSON in this exact format:
@@ -332,7 +347,7 @@ function buildSubtaskPrompt(request: SubtaskRequest): string {
 Task: "${request.taskTitle}"
 ${request.taskNotes ? `Notes: ${request.taskNotes}` : ''}
 Deadline: ${request.deadline}
-
+${buildPersonaContext()}
 Return JSON only.`
 }
 
@@ -362,7 +377,9 @@ Today: ${new Date().toISOString().split('T')[0]}
 Existing calendar events (DO NOT schedule over these):
 ${eventsList}
 
-Break this into subtasks and schedule them across days. Return JSON only.`
+Break this into subtasks and schedule them across days.
+${buildPersonaContext()}
+Return JSON only.`
 }
 
 async function callAiWithPrompt(systemPrompt: string, userPrompt: string): Promise<string> {
@@ -433,6 +450,7 @@ Rules:
 - If notes exist, you MUST preserve ALL existing content — URLs, links, numbers, dates, references, and any structured data must remain exactly as-is. Only rephrase surrounding prose for clarity.
 - NEVER remove or shorten URLs, numeric values, IDs, phone numbers, or any reference data from notes
 - Do NOT change the meaning or scope of the task
+- If a user persona is provided, adapt language and tone to match their role and domain
 - Use the list name as domain context (e.g. a task in "Work" should use professional language, a task in "Health" should use wellness language)
 - Consider due dates to add urgency cues in notes when appropriate
 - For subtasks, ensure the title is clear even without seeing the parent task
@@ -472,7 +490,8 @@ function buildRenamePrompt(tasks: RenameTask[]): string {
     })
     .join('\n')
 
-  return `Improve these task titles and notes:\n\n${tasksList}\n\nReturn JSON only.`
+  const personaCtx = buildPersonaContext()
+  return `Improve these task titles and notes:\n\n${tasksList}${personaCtx}\n\nReturn JSON only.`
 }
 
 export async function renameTasks(request: {

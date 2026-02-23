@@ -22,6 +22,7 @@ import { TimerView } from './components/TimerView'
 import { WeeklyReview } from './components/WeeklyReview'
 import { QuickCaptureInput } from './components/QuickCaptureInput'
 import { EODReview } from './components/EODReview'
+import { PersonaSetupModal } from './components/PersonaSetupModal'
 import { useEODReview } from './hooks/useEODReview'
 import { DailyRitual } from './components/DailyRitual'
 import { useDailyRitual } from './hooks/useDailyRitual'
@@ -66,6 +67,8 @@ function TrayApp() {
   const { shouldShow: shouldShowEOD, dismiss: dismissEOD } = useEODReview(signedIn)
   const { shouldShow: shouldShowRitual, show: showRitual, dismiss: dismissRitual, complete: completeRitual } = useDailyRitual(signedIn)
 
+  const [showPersonaSetup, setShowPersonaSetup] = useState(false)
+  const [personaChecked, setPersonaChecked] = useState(false)
   const [tab, setTab] = useState<Tab>('dashboard')
   const [view, setView] = useState<View>('dashboard')
   const [selectedTask, setSelectedTask] = useState<Task | null>(null)
@@ -84,6 +87,18 @@ function TrayApp() {
     const completed = allTasks.filter((t) => t.status === 'completed').length
     return { total, completed }
   }, [allTasks])
+
+  // Check persona on mount after auth
+  useEffect(() => {
+    if (signedIn && !personaChecked) {
+      window.api.isPersonaConfigured().then((result) => {
+        if (result.success && result.data === false) {
+          setShowPersonaSetup(true)
+        }
+        setPersonaChecked(true)
+      })
+    }
+  }, [signedIn, personaChecked])
 
   // Keep selectedTask in sync with tasks array
   useEffect(() => {
@@ -453,6 +468,14 @@ function TrayApp() {
           onNavigateToPlan={() => { completeRitual(); handleTabChange('plan') }}
           metadataMap={metadataMap}
           onSetMetadata={setMetadata}
+        />
+      )}
+
+      {/* Persona setup modal */}
+      {showPersonaSetup && (
+        <PersonaSetupModal
+          onComplete={() => setShowPersonaSetup(false)}
+          onSkip={() => setShowPersonaSetup(false)}
         />
       )}
     </div>
