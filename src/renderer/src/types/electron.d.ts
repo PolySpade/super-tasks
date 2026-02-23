@@ -76,6 +76,13 @@ interface ElectronAPI {
   getTimeTracking: (taskId: string) => Promise<{ success: boolean; data?: any; error?: string }>
   getAllTimeTracking: () => Promise<{ success: boolean; data?: any; error?: string }>
   getHistoricalTimeData: () => Promise<{ success: boolean; data?: any; error?: string }>
+
+  // Window events
+  onWindowShown: (callback: () => void) => () => void
+
+  // Offline queue
+  getOfflineQueue: () => Promise<{ success: boolean; data?: any[]; error?: string }>
+  processOfflineQueue: () => Promise<{ success: boolean; data?: number; error?: string }>
 }
 
 declare global {

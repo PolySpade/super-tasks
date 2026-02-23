@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useAuth } from './hooks/useAuth'
 import { useTaskLists } from './hooks/useTaskLists'
 import { useTasks } from './hooks/useTasks'
@@ -80,7 +80,55 @@ function TrayApp() {
   const [miniTimer, setMiniTimer] = useState(false)
   const [dashboardKey, setDashboardKey] = useState(0)
 
-  const error = listsError || tasksError
+  const [pendingOffline, setPendingOffline] = useState(0)
+  const [isOffline, setIsOffline] = useState(!navigator.onLine)
+
+  // Track online/offline status
+  useEffect(() => {
+    const goOffline = () => setIsOffline(true)
+    const goOnline = () => {
+      setIsOffline(false)
+      // Auto-sync when coming back online
+      window.api.processOfflineQueue().then(() => {
+        window.api.getOfflineQueue().then((res) => {
+          if (res.success) setPendingOffline(res.data?.length || 0)
+        })
+      })
+    }
+    window.addEventListener('offline', goOffline)
+    window.addEventListener('online', goOnline)
+    return () => {
+      window.removeEventListener('offline', goOffline)
+      window.removeEventListener('online', goOnline)
+    }
+  }, [])
+
+  // Suppress error banners when offline
+  const error = isOffline ? null : (listsError || tasksError)
+
+  // Auto-refresh on window show + offline queue sync
+  useEffect(() => {
+    if (!signedIn) return
+    const cleanup = window.api.onWindowShown(() => {
+      refreshLists()
+      refreshTasks()
+      // Check offline queue and try to process
+      window.api.processOfflineQueue().then(() => {
+        window.api.getOfflineQueue().then((res) => {
+          if (res.success) setPendingOffline(res.data?.length || 0)
+        })
+      })
+    })
+    return cleanup
+  }, [signedIn])
+
+  // Check offline queue on mount
+  useEffect(() => {
+    if (!signedIn) return
+    window.api.getOfflineQueue().then((res) => {
+      if (res.success) setPendingOffline(res.data?.length || 0)
+    })
+  }, [signedIn])
 
   const taskCount = useMemo(() => {
     const total = allTasks.length
@@ -270,7 +318,7 @@ function TrayApp() {
   if (miniTimer) {
     return (
       <div className="app app-mini">
-        <TimerView allTasks={allTasks} mini onToggleMini={handleToggleMiniTimer} />
+        <TimerView taskLists={taskLists} mini onToggleMini={handleToggleMiniTimer} />
       </div>
     )
   }
@@ -289,9 +337,23 @@ function TrayApp() {
               : () => setView(tab === 'calendar' ? 'dashboard' : tab)
         }
         title={getTitle()}
+        isOffline={isOffline}
       />
 
       {error && <ErrorBanner message={error} onDismiss={clearError} />}
+
+      {pendingOffline > 0 && (
+        <div style={{
+          background: '#3a3000',
+          color: '#ffd54f',
+          padding: '4px 12px',
+          fontSize: '12px',
+          textAlign: 'center',
+          borderBottom: '1px solid #5a4800'
+        }}>
+          {pendingOffline} change{pendingOffline !== 1 ? 's' : ''} pending sync
+        </div>
+      )}
 
       {view === 'settings' ? (
         <SettingsPanel onSignOut={handleSignOut} />
@@ -371,6 +433,7 @@ function TrayApp() {
                 onSelect={setSelectedListId}
                 onRefresh={handleRefresh}
                 taskCount={taskCount}
+                isOffline={isOffline}
               />
               <TaskList
                 tasks={tasks}

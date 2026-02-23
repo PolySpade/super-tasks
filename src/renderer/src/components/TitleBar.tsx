@@ -6,9 +6,10 @@ interface TitleBarProps {
   showBack?: boolean
   onBack?: () => void
   title?: string
+  isOffline?: boolean
 }
 
-export function TitleBar({ onSettingsClick, onClose, showBack, onBack, title }: TitleBarProps) {
+export function TitleBar({ onSettingsClick, onClose, showBack, onBack, title, isOffline }: TitleBarProps) {
   return (
     <div className="title-bar">
       <div className="title-bar-drag">
@@ -20,6 +21,20 @@ export function TitleBar({ onSettingsClick, onClose, showBack, onBack, title }: 
         <span className="title-bar-title">{title || 'Google Tasks'}</span>
       </div>
       <div className="title-bar-actions">
+        <span
+          className="status-dot"
+          title={isOffline ? 'Offline' : 'Online'}
+          style={{
+            width: 8,
+            height: 8,
+            borderRadius: '50%',
+            background: isOffline ? '#f44336' : '#4caf50',
+            display: 'inline-block',
+            marginRight: 10,
+            marginTop:11,
+            flexShrink: 0
+          }}
+        />
         <button className="title-bar-btn" onClick={onSettingsClick} title="Settings">
           <Settings size={14} />
         </button>

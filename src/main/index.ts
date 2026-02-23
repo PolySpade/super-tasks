@@ -2,6 +2,8 @@ import { app, globalShortcut, Notification } from 'electron'
 import { electronApp, optimizer } from '@electron-toolkit/utils'
 import Store from 'electron-store'
 import { createWindow, toggleWindow, getWindow, setQuitting } from './window'
+import { processOfflineQueue } from './google-tasks-api'
+import { isOnline, queueSize } from './offline-queue'
 import { createTray, getTray } from './tray'
 import { registerIpcHandlers } from './ipc-handlers'
 import { restoreSession } from './google-auth'
@@ -90,6 +92,13 @@ if (!gotTheLock) {
         }
       }
     }, 60 * 60 * 1000) // Check every hour
+
+    // Periodic offline queue processor (every 30s)
+    setInterval(() => {
+      if (isOnline() && queueSize() > 0) {
+        processOfflineQueue().catch(() => {})
+      }
+    }, 30_000)
   })
 
   // Prevent app from quitting when window is closed - empty handler stops default quit

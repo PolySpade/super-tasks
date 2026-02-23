@@ -7,8 +7,10 @@ import {
   updateTask,
   moveTask,
   deleteTask,
-  toggleTaskComplete
+  toggleTaskComplete,
+  processOfflineQueue
 } from './google-tasks-api'
+import { getPendingQueue } from './offline-queue'
 import { getCalendars, getEvents, createEvent, updateEvent, deleteEvent } from './google-calendar-api'
 import { getSettings, updateSettings } from './settings-store'
 import { getPersona, setPersona, isPersonaConfigured } from './persona-store'
@@ -713,6 +715,25 @@ export function registerIpcHandlers(): void {
 
   ipcMain.handle('capture:hide', () => {
     hideCaptureWindow()
+  })
+
+  // Offline queue
+  ipcMain.handle('offline:get-queue', () => {
+    try {
+      const queue = getPendingQueue()
+      return { success: true, data: queue }
+    } catch (error: any) {
+      return { success: false, error: error.message }
+    }
+  })
+
+  ipcMain.handle('offline:process-now', async () => {
+    try {
+      const processed = await processOfflineQueue()
+      return { success: true, data: processed }
+    } catch (error: any) {
+      return { success: false, error: error.message }
+    }
   })
 
   // Time tracking

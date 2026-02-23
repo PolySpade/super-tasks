@@ -140,7 +140,17 @@ const api = {
   // Time tracking
   getTimeTracking: (taskId: string) => ipcRenderer.invoke('time-tracking:get', taskId),
   getAllTimeTracking: () => ipcRenderer.invoke('time-tracking:get-all'),
-  getHistoricalTimeData: () => ipcRenderer.invoke('time-tracking:get-historical')
+  getHistoricalTimeData: () => ipcRenderer.invoke('time-tracking:get-historical'),
+
+  // Window events
+  onWindowShown: (callback: () => void) => {
+    ipcRenderer.on('window:shown', callback)
+    return () => { ipcRenderer.removeListener('window:shown', callback) }
+  },
+
+  // Offline queue
+  getOfflineQueue: () => ipcRenderer.invoke('offline:get-queue'),
+  processOfflineQueue: () => ipcRenderer.invoke('offline:process-now')
 }
 
 contextBridge.exposeInMainWorld('api', api)

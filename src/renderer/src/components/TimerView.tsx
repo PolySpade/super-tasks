@@ -61,15 +61,19 @@ export function TimerView({ taskLists, mini, onToggleMini }: TimerViewProps) {
     ;(async () => {
       const items: { task: Task; listId: string; listTitle: string }[] = []
       for (const list of taskLists) {
-        const res = await window.api.getTasks(list.id)
-        if (cancelled) return
-        if (res.success && res.data) {
-          for (const t of flattenTasks(res.data)) {
-            items.push({ task: t, listId: list.id, listTitle: list.title })
+        try {
+          const res = await window.api.getTasks(list.id)
+          if (cancelled) return
+          if (res.success && res.data) {
+            for (const t of flattenTasks(res.data)) {
+              items.push({ task: t, listId: list.id, listTitle: list.title })
+            }
           }
+        } catch {
+          // skip lists that fail to load
         }
       }
-      setTasksByList(items)
+      if (!cancelled) setTasksByList(items)
     })()
     return () => { cancelled = true }
   }, [taskLists])

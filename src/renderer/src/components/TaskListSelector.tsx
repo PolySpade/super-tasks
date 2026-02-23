@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { RefreshCw } from 'lucide-react'
 import { TaskList } from '../types'
 
@@ -7,6 +8,7 @@ interface TaskListSelectorProps {
   onSelect: (id: string) => void
   onRefresh: () => void
   taskCount: { total: number; completed: number }
+  isOffline?: boolean
 }
 
 export function TaskListSelector({
@@ -14,8 +16,20 @@ export function TaskListSelector({
   selectedListId,
   onSelect,
   onRefresh,
-  taskCount
+  taskCount,
+  isOffline
 }: TaskListSelectorProps) {
+  const [offlineMsg, setOfflineMsg] = useState(false)
+
+  const handleRefresh = () => {
+    if (isOffline) {
+      setOfflineMsg(true)
+      setTimeout(() => setOfflineMsg(false), 2000)
+      return
+    }
+    onRefresh()
+  }
+
   return (
     <div className="task-list-selector">
       <div className="selector-row">
@@ -29,15 +43,21 @@ export function TaskListSelector({
             </option>
           ))}
         </select>
-        <button className="icon-btn" onClick={onRefresh} title="Refresh">
+        <button className="icon-btn" onClick={handleRefresh} title="Refresh">
           <RefreshCw size={14} />
         </button>
       </div>
-      <div className="task-summary">
-        <span>{taskCount.total - taskCount.completed} remaining</span>
-        <span className="dot">·</span>
-        <span>{taskCount.completed} done</span>
-      </div>
+      {offlineMsg ? (
+        <div className="task-summary" style={{ color: '#f44336' }}>
+          You are in offline mode
+        </div>
+      ) : (
+        <div className="task-summary">
+          <span>{taskCount.total - taskCount.completed} remaining</span>
+          <span className="dot">·</span>
+          <span>{taskCount.completed} done</span>
+        </div>
+      )}
     </div>
   )
 }

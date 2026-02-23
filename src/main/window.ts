@@ -62,6 +62,7 @@ export function toggleWindow(trayBounds: Electron.Rectangle): void {
   mainWindow.setPosition(x, y, false)
   mainWindow.show()
   mainWindow.focus()
+  mainWindow.webContents.send('window:shown')
 }
 
 function calculatePosition(trayBounds: Electron.Rectangle) {
