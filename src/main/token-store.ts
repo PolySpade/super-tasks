@@ -5,6 +5,7 @@ interface TokenData {
   access_token: string
   refresh_token: string
   expiry_date: number
+  scope?: string
 }
 
 const store = new Store({ name: 'google-tasks-auth' })
@@ -29,4 +30,10 @@ export function loadTokens(): TokenData | null {
 
 export function clearTokens(): void {
   store.delete('tokens')
+}
+
+export function loadGrantedScopes(): string[] {
+  const tokens = loadTokens()
+  if (!tokens?.scope) return []
+  return tokens.scope.split(' ')
 }

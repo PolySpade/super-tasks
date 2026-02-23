@@ -7,7 +7,7 @@ export interface TaskMetadata {
   timeBoxMinutes?: number
 }
 
-const store = new Store({ name: 'task-metadata' })
+export const store = new Store({ name: 'task-metadata' })
 
 function getAll(): Record<string, TaskMetadata> {
   return (store.get('metadata') as Record<string, TaskMetadata> | undefined) || {}

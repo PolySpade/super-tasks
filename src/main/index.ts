@@ -10,6 +10,8 @@ import { restoreSession } from './google-auth'
 import { showCaptureWindow } from './quick-capture-window'
 import { startHabitScheduler, stopHabitScheduler } from './habit-scheduler'
 import { startNudgeEngine, stopNudgeEngine } from './nudge-engine'
+import { initDriveSync, stopPeriodicSync } from './drive-sync-init'
+import { store as weeklyReviewNotifStore } from './weekly-review-store'
 // Env vars are baked in at build time via electron.vite.config.ts define
 
 // Single instance lock
@@ -30,6 +32,7 @@ if (!gotTheLock) {
     globalShortcut.unregisterAll()
     stopHabitScheduler()
     stopNudgeEngine()
+    stopPeriodicSync()
   })
 
   app.whenReady().then(async () => {
@@ -58,6 +61,9 @@ if (!gotTheLock) {
     // Auto-restore session
     await restoreSession()
 
+    // Start Drive sync (checks for scope internally)
+    initDriveSync()
+
     // Start habit scheduler
     startHabitScheduler()
 
@@ -74,17 +80,16 @@ if (!gotTheLock) {
     }
 
     // Sunday weekly review reminder
-    const notifStore = new Store({ name: 'weekly-review-notif' })
     setInterval(() => {
       const now = new Date()
       if (now.getDay() === 0 && now.getHours() === 10) {
         const todayKey = now.toISOString().split('T')[0]
-        if (notifStore.get('lastNotified') !== todayKey) {
+        if (weeklyReviewNotifStore.get('lastNotified') !== todayKey) {
           new Notification({
             title: 'Weekly Review',
             body: 'Time to review your week and plan ahead!'
           }).show()
-          notifStore.set('lastNotified', todayKey)
+          weeklyReviewNotifStore.set('lastNotified', todayKey)
         }
       }
     }, 60 * 60 * 1000) // Check every hour

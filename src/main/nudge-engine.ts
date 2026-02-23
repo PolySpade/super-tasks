@@ -28,7 +28,7 @@ const DEFAULTS: NudgeConfig = {
   quietHoursEnd: '07:00'
 }
 
-const store = new Store({ name: 'nudge-settings' })
+export const store = new Store({ name: 'nudge-settings' })
 let nudgeInterval: ReturnType<typeof setInterval> | null = null
 let todaysPlan: TodayPlanBlock[] = []
 let breakStartTime: number | null = null

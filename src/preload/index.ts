@@ -150,7 +150,11 @@ const api = {
 
   // Offline queue
   getOfflineQueue: () => ipcRenderer.invoke('offline:get-queue'),
-  processOfflineQueue: () => ipcRenderer.invoke('offline:process-now')
+  processOfflineQueue: () => ipcRenderer.invoke('offline:process-now'),
+
+  // Drive sync
+  triggerSync: () => ipcRenderer.invoke('sync:trigger'),
+  getSyncStatus: () => ipcRenderer.invoke('sync:status')
 }
 
 contextBridge.exposeInMainWorld('api', api)

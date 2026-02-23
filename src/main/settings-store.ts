@@ -27,7 +27,7 @@ const DEFAULTS: PlannerSettings = {
   quickCaptureDefaultListId: ''
 }
 
-const store = new Store({ name: 'planner-settings' })
+export const store = new Store({ name: 'planner-settings' })
 
 export function getSettings(): PlannerSettings {
   const saved = store.get('settings') as Partial<PlannerSettings> | undefined

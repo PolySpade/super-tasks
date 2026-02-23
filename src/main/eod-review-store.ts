@@ -9,7 +9,7 @@ export interface EODReview {
   focusMinutes: number
 }
 
-const store = new Store({ name: 'eod-reviews' })
+export const store = new Store({ name: 'eod-reviews' })
 
 function getReviews(): EODReview[] {
   return (store.get('reviews') as EODReview[] | undefined) || []

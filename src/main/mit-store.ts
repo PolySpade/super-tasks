@@ -1,7 +1,7 @@
 import Store from 'electron-store'
 
 const MAX_MITS = 3
-const store = new Store({ name: 'mit-tasks' })
+export const store = new Store({ name: 'mit-tasks' })
 
 function getAllDates(): Record<string, string[]> {
   return (store.get('dates') as Record<string, string[]> | undefined) || {}

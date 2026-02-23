@@ -7,7 +7,7 @@ export interface RitualHistory {
   mitTaskIds: string[]
 }
 
-const store = new Store({ name: 'daily-ritual' })
+export const store = new Store({ name: 'daily-ritual' })
 
 export function wasCompletedToday(): boolean {
   const today = new Date().toISOString().split('T')[0]

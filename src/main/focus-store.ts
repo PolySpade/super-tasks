@@ -34,7 +34,7 @@ const POMODORO_DEFAULTS: PomodoroConfig = {
   logToCalendar: false
 }
 
-const store = new Store({ name: 'focus-sessions' })
+export const store = new Store({ name: 'focus-sessions' })
 
 function getToday(): string {
   return new Date().toISOString().split('T')[0]

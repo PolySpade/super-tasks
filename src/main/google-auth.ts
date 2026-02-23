@@ -2,13 +2,14 @@ import { google } from 'googleapis'
 import http from 'http'
 import { URL } from 'url'
 import { shell } from 'electron'
-import { saveTokens, loadTokens, clearTokens } from './token-store'
+import { saveTokens, loadTokens, clearTokens, loadGrantedScopes } from './token-store'
 
 const REDIRECT_PORT = 52836
 const REDIRECT_URI = `http://localhost:${REDIRECT_PORT}/callback`
 const SCOPES = [
   'https://www.googleapis.com/auth/tasks',
-  'https://www.googleapis.com/auth/calendar.events'
+  'https://www.googleapis.com/auth/calendar.events',
+  'https://www.googleapis.com/auth/drive.appdata'
 ]
 
 function createOAuth2Client() {
@@ -29,7 +30,8 @@ export function getAuthClient() {
       saveTokens({
         access_token: tokens.access_token || existing?.access_token || '',
         refresh_token: tokens.refresh_token || existing?.refresh_token || '',
-        expiry_date: tokens.expiry_date || existing?.expiry_date || 0
+        expiry_date: tokens.expiry_date || existing?.expiry_date || 0,
+        scope: tokens.scope || existing?.scope
       })
     })
   }
@@ -63,7 +65,8 @@ export async function signIn(): Promise<boolean> {
         saveTokens({
           access_token: tokens.access_token || '',
           refresh_token: tokens.refresh_token || '',
-          expiry_date: tokens.expiry_date || 0
+          expiry_date: tokens.expiry_date || 0,
+          scope: tokens.scope || undefined
         })
 
         res.writeHead(200, { 'Content-Type': 'text/html' })
@@ -112,4 +115,9 @@ export function signOut(): void {
 export function isSignedIn(): boolean {
   const tokens = loadTokens()
   return !!(tokens?.refresh_token)
+}
+
+export function hasDriveAppDataScope(): boolean {
+  const scopes = loadGrantedScopes()
+  return scopes.includes('https://www.googleapis.com/auth/drive.appdata')
 }

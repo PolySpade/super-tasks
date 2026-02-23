@@ -14,7 +14,7 @@ const DEFAULTS: Persona = {
   preferences: ''
 }
 
-const store = new Store({ name: 'persona' })
+export const store = new Store({ name: 'persona' })
 
 export function getPersona(): Persona {
   const saved = store.get('persona') as Partial<Persona> | undefined

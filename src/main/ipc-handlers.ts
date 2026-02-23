@@ -50,6 +50,8 @@ import {
   getPomodoroSettings,
   setPomodoroSettings
 } from './focus-store'
+import { hasDriveAppDataScope } from './google-auth'
+import { syncAllStores, getLastSyncTime } from './drive-sync'
 
 export function registerIpcHandlers(): void {
   // Auth
@@ -768,6 +770,23 @@ export function registerIpcHandlers(): void {
       return { success: true, data: processed }
     } catch (error: any) {
       return { success: false, error: error.message }
+    }
+  })
+
+  // Drive sync
+  ipcMain.handle('sync:trigger', async () => {
+    try {
+      await syncAllStores()
+      return { success: true }
+    } catch (error: any) {
+      return { success: false, error: error.message }
+    }
+  })
+
+  ipcMain.handle('sync:status', () => {
+    return {
+      hasDriveScope: hasDriveAppDataScope(),
+      lastSyncTime: getLastSyncTime()
     }
   })
 

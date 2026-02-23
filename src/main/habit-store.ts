@@ -22,7 +22,7 @@ export interface HabitInstance {
   taskId?: string // Google Task ID if created
 }
 
-const store = new Store({ name: 'habits' })
+export const store = new Store({ name: 'habits' })
 
 function getHabits(): HabitDefinition[] {
   return (store.get('habits') as HabitDefinition[] | undefined) || []

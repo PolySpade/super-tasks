@@ -7,7 +7,7 @@ export interface TaskTimeData {
   lastSessionDate: string
 }
 
-const store = new Store({ name: 'time-tracking' })
+export const store = new Store({ name: 'time-tracking' })
 
 function getAll(): Record<string, TaskTimeData> {
   return (store.get('tasks') as Record<string, TaskTimeData> | undefined) || {}
