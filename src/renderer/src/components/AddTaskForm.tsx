@@ -24,7 +24,12 @@ export function AddTaskForm({ onAdd, parentId, parentTitle, onCancelSubtask }: A
     e.preventDefault()
     const trimmed = title.trim()
     if (!trimmed) return
-    onAdd(trimmed, undefined, due || undefined, parentId)
+    const now = new Date()
+    const timestamp = now.toLocaleString(undefined, {
+      dateStyle: 'medium',
+      timeStyle: 'short'
+    })
+    onAdd(trimmed, `Created: ${timestamp}`, due || undefined, parentId)
     setTitle('')
     setDue('')
     setShowDatePicker(false)

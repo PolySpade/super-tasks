@@ -1,11 +1,12 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { X, Play, Pause, SkipForward, Square, Flame } from 'lucide-react'
+import { X, Play, Pause, SkipForward, Square, Flame, CheckCircle2, ArrowRight } from 'lucide-react'
 import { Task, PomodoroConfig, FocusStats } from '../types'
 import { usePomodoroTimer, PomodoroPhase } from '../hooks/usePomodoroTimer'
 
 interface FocusModeProps {
   task: Task
   onExit: (summary: { totalMinutes: number; sessionsCompleted: number }) => void
+  onToggleComplete?: (taskId: string, completed: boolean) => void
   mode?: 'pomodoro' | 'timebox'
   timeBoxMinutes?: number
 }
@@ -47,12 +48,13 @@ function phaseColor(phase: PomodoroPhase, isTimebox: boolean): string {
   }
 }
 
-export function FocusMode({ task, onExit, mode = 'pomodoro', timeBoxMinutes }: FocusModeProps) {
+export function FocusMode({ task, onExit, onToggleComplete, mode = 'pomodoro', timeBoxMinutes }: FocusModeProps) {
   const isTimebox = mode === 'timebox' && !!timeBoxMinutes
   const [config, setConfig] = useState<PomodoroConfig | null>(null)
   const [stats, setStats] = useState<FocusStats | null>(null)
   const [totalMinutes, setTotalMinutes] = useState(0)
   const [timeboxDone, setTimeboxDone] = useState(false)
+  const [showCompletionPrompt, setShowCompletionPrompt] = useState(false)
   const workStartRef = useRef<string>('')
   const totalMinutesRef = useRef(0)
   const sessionCountRef = useRef(0)
@@ -77,11 +79,13 @@ export function FocusMode({ task, onExit, mode = 'pomodoro', timeBoxMinutes }: F
     if (isTimebox) {
       await window.api.notify("TIME'S UP", `Time box for "${task.title}" is complete!`)
       setTimeboxDone(true)
+      setShowCompletionPrompt(true)
       totalMinutesRef.current += duration
       setTotalMinutes(totalMinutesRef.current)
       return
     }
 
+    setShowCompletionPrompt(true)
     await window.api.notify('Focus Complete', 'Time for a break!')
 
     if (config?.logToCalendar) {
@@ -167,6 +171,20 @@ export function FocusMode({ task, onExit, mode = 'pomodoro', timeBoxMinutes }: F
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  const handleMarkComplete = useCallback(() => {
+    onToggleComplete?.(task.id, true)
+    setShowCompletionPrompt(false)
+    timer.reset()
+    onExit({
+      totalMinutes: totalMinutesRef.current,
+      sessionsCompleted: sessionCountRef.current
+    })
+  }, [onToggleComplete, task.id, timer, onExit])
+
+  const handleDismissPrompt = useCallback(() => {
+    setShowCompletionPrompt(false)
+  }, [])
+
   const handleExit = useCallback(() => {
     timer.reset()
     onExit({
@@ -213,9 +231,25 @@ export function FocusMode({ task, onExit, mode = 'pomodoro', timeBoxMinutes }: F
           <div className="focus-timebox-done">
             <div className="focus-timebox-done-text">TIME'S UP!</div>
             <div className="focus-timebox-done-sub">{timeBoxMinutes} minutes completed</div>
-            <button className="focus-ctrl-btn focus-ctrl-primary" onClick={handleExit}>
-              Done
-            </button>
+            {showCompletionPrompt && onToggleComplete ? (
+              <div className="focus-completion-prompt">
+                <span className="focus-completion-label">Did you finish this task?</span>
+                <div className="focus-completion-actions">
+                  <button className="focus-completion-btn focus-completion-yes" onClick={handleMarkComplete}>
+                    <CheckCircle2 size={14} />
+                    Yes, done
+                  </button>
+                  <button className="focus-completion-btn focus-completion-no" onClick={() => { handleDismissPrompt(); handleExit() }}>
+                    <ArrowRight size={14} />
+                    Not yet
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button className="focus-ctrl-btn focus-ctrl-primary" onClick={handleExit}>
+                Done
+              </button>
+            )}
           </div>
         ) : (
           <>
@@ -243,6 +277,22 @@ export function FocusMode({ task, onExit, mode = 'pomodoro', timeBoxMinutes }: F
                 )}
               </div>
             </div>
+
+            {showCompletionPrompt && onToggleComplete && (
+              <div className="focus-completion-prompt">
+                <span className="focus-completion-label">Did you finish this task?</span>
+                <div className="focus-completion-actions">
+                  <button className="focus-completion-btn focus-completion-yes" onClick={handleMarkComplete}>
+                    <CheckCircle2 size={14} />
+                    Yes, done
+                  </button>
+                  <button className="focus-completion-btn focus-completion-no" onClick={handleDismissPrompt}>
+                    <ArrowRight size={14} />
+                    Not yet
+                  </button>
+                </div>
+              </div>
+            )}
 
             <div className="focus-controls">
               {timer.isPaused ? (

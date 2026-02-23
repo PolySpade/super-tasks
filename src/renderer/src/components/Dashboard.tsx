@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react'
-import { Calendar, Sparkles, Plus, Wand2, ClipboardList, Zap, Moon, Sun } from 'lucide-react'
+import { Calendar, Sparkles, Plus, Wand2, ClipboardList, Zap, Moon, Sun, Sunset } from 'lucide-react'
 import { Task, TaskList, EnergyLevel, TaskMetadata } from '../types'
 import { useDashboardData } from '../hooks/useDashboardData'
 import { useDeadlines } from '../hooks/useDeadlines'
@@ -25,6 +25,7 @@ interface DashboardProps {
   allTasks: Task[]
   metadataMap: Record<string, TaskMetadata>
   onStartRitual?: () => void
+  onStartEODReview?: () => void
 }
 
 function flattenTasks(tasks: Task[]): Task[] {
@@ -47,7 +48,8 @@ export function Dashboard({
   onSetMITs,
   allTasks,
   metadataMap,
-  onStartRitual
+  onStartRitual,
+  onStartEODReview
 }: DashboardProps) {
   const { stats, recentCompleted, weeklyByList, loading, refresh } = useDashboardData(
     signedIn,
@@ -119,6 +121,12 @@ export function Dashboard({
             <Wand2 size={14} />
             AI Rename
           </button>
+          {onStartEODReview && (
+            <button className="dashboard-action-btn" onClick={onStartEODReview}>
+              <Sunset size={14} />
+              EOD Review
+            </button>
+          )}
           <button className="dashboard-action-btn" onClick={onNavigateToWeeklyReview}>
             <ClipboardList size={14} />
             Weekly Review

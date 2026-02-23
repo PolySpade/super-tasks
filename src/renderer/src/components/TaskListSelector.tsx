@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { RefreshCw } from 'lucide-react'
+import { RefreshCw, Minimize2 } from 'lucide-react'
 import { TaskList } from '../types'
 
 interface TaskListSelectorProps {
@@ -9,6 +9,7 @@ interface TaskListSelectorProps {
   onRefresh: () => void
   taskCount: { total: number; completed: number }
   isOffline?: boolean
+  onMinimize?: () => void
 }
 
 export function TaskListSelector({
@@ -17,7 +18,8 @@ export function TaskListSelector({
   onSelect,
   onRefresh,
   taskCount,
-  isOffline
+  isOffline,
+  onMinimize
 }: TaskListSelectorProps) {
   const [offlineMsg, setOfflineMsg] = useState(false)
 
@@ -46,6 +48,11 @@ export function TaskListSelector({
         <button className="icon-btn" onClick={handleRefresh} title="Refresh">
           <RefreshCw size={14} />
         </button>
+        {onMinimize && (
+          <button className="icon-btn" onClick={onMinimize} title="Compact view">
+            <Minimize2 size={14} />
+          </button>
+        )}
       </div>
       {offlineMsg ? (
         <div className="task-summary" style={{ color: '#f44336' }}>

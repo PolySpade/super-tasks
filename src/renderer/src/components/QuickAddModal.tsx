@@ -22,7 +22,9 @@ export function QuickAddModal({ taskLists, onClose, onCreated }: QuickAddModalPr
     setError(null)
     try {
       const dueIso = due ? new Date(due + 'T00:00:00').toISOString() : undefined
-      const result = await window.api.createTask(listId, title.trim(), '', dueIso)
+      const now = new Date()
+      const timestamp = now.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })
+      const result = await window.api.createTask(listId, title.trim(), `Created: ${timestamp}`, dueIso)
       if (result.success) {
         onCreated()
         onClose()

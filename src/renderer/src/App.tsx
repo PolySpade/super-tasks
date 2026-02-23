@@ -26,7 +26,7 @@ import { PersonaSetupModal } from './components/PersonaSetupModal'
 import { useEODReview } from './hooks/useEODReview'
 import { DailyRitual } from './components/DailyRitual'
 import { useDailyRitual } from './hooks/useDailyRitual'
-import { LayoutDashboard, ListTodo, CalendarDays, CalendarClock, Timer } from 'lucide-react'
+import { LayoutDashboard, ListTodo, CalendarDays, CalendarClock, Timer, Minimize2, Maximize2 } from 'lucide-react'
 
 type Tab = 'dashboard' | 'tasks' | 'calendar' | 'plan' | 'timer'
 type View = 'dashboard' | 'tasks' | 'settings' | 'detail' | 'plan' | 'calendar' | 'deadlines' | 'timer' | 'weekly-review'
@@ -64,7 +64,10 @@ function TrayApp() {
 
   const { metadataMap, setMetadata } = useTaskMetadata()
   const { mits, setMITs, addMIT, removeMIT, isMIT } = useMITs()
-  const { shouldShow: shouldShowEOD, dismiss: dismissEOD } = useEODReview(signedIn)
+  const { shouldShow: autoShowEOD, dismiss: dismissAutoEOD } = useEODReview(signedIn)
+  const [manualEOD, setManualEOD] = useState(false)
+  const shouldShowEOD = autoShowEOD || manualEOD
+  const dismissEOD = () => { dismissAutoEOD(); setManualEOD(false) }
   const { shouldShow: shouldShowRitual, show: showRitual, dismiss: dismissRitual, complete: completeRitual } = useDailyRitual(signedIn)
 
   const [showPersonaSetup, setShowPersonaSetup] = useState(false)
@@ -78,6 +81,7 @@ function TrayApp() {
   const [focusMode, setFocusMode] = useState<'pomodoro' | 'timebox'>('pomodoro')
   const [focusTimeBox, setFocusTimeBox] = useState<number | undefined>()
   const [miniTimer, setMiniTimer] = useState(false)
+  const [miniTasks, setMiniTasks] = useState(false)
   const [dashboardKey, setDashboardKey] = useState(0)
 
   const [pendingOffline, setPendingOffline] = useState(0)
@@ -277,6 +281,19 @@ function TrayApp() {
     }
   }
 
+  const handleToggleMiniTasks = async () => {
+    if (miniTasks) {
+      await window.api.setWindowSize(440, 520)
+      setMiniTasks(false)
+    } else {
+      setTab('tasks')
+      setView('tasks')
+      setSelectedTask(null)
+      await window.api.setWindowSize(300, 400)
+      setMiniTasks(true)
+    }
+  }
+
   const handleToggleMIT = (taskId: string) => {
     if (isMIT(taskId)) {
       removeMIT(taskId)
@@ -318,7 +335,59 @@ function TrayApp() {
   if (miniTimer) {
     return (
       <div className="app app-mini">
-        <TimerView taskLists={taskLists} mini onToggleMini={handleToggleMiniTimer} />
+        <TimerView taskLists={taskLists} mini onToggleMini={handleToggleMiniTimer} onToggleComplete={toggleComplete} />
+      </div>
+    )
+  }
+
+  if (miniTasks) {
+    return (
+      <div className="app app-mini-tasks">
+        <div className="mini-tasks-header">
+          <span className="mini-tasks-title">Tasks</span>
+          <div className="mini-tasks-actions">
+            <span
+              className="status-dot"
+              title={isOffline ? 'Offline' : 'Online'}
+              style={{
+                width: 6,
+                height: 6,
+                borderRadius: '50%',
+                background: isOffline ? '#f44336' : '#4caf50',
+                display: 'inline-block',
+                flexShrink: 0
+              }}
+            />
+            <button className="icon-btn" onClick={handleToggleMiniTasks} title="Expand">
+              <Maximize2 size={12} />
+            </button>
+            <button className="icon-btn" onClick={handleClose} title="Close">
+              <span style={{ fontSize: 14, lineHeight: 1 }}>&times;</span>
+            </button>
+          </div>
+        </div>
+        {pendingOffline > 0 && (
+          <div className="mini-tasks-offline-bar">
+            {pendingOffline} pending sync
+          </div>
+        )}
+        <div className="mini-tasks-list">
+          <TaskList
+            tasks={tasks}
+            loading={tasksLoading}
+            onToggle={toggleComplete}
+            onDelete={removeTask}
+            onSelectTask={handleSelectTask}
+            onAddSubtask={handleAddSubtask}
+            metadataMap={metadataMap}
+          />
+        </div>
+        <AddTaskForm
+          onAdd={addTask}
+          parentId={subtaskParentId}
+          parentTitle={subtaskParentTitle}
+          onCancelSubtask={handleCancelSubtask}
+        />
       </div>
     )
   }
@@ -383,7 +452,7 @@ function TrayApp() {
           onBack={() => setView('dashboard')}
         />
       ) : view === 'timer' ? (
-        <TimerView taskLists={taskLists} onToggleMini={handleToggleMiniTimer} />
+        <TimerView taskLists={taskLists} onToggleMini={handleToggleMiniTimer} onToggleComplete={toggleComplete} />
       ) : view === 'weekly-review' ? (
         <WeeklyReview
           signedIn={signedIn}
@@ -414,6 +483,7 @@ function TrayApp() {
               allTasks={allTasks}
               metadataMap={metadataMap}
               onStartRitual={showRitual}
+              onStartEODReview={() => setManualEOD(true)}
             />
           )}
         </>
@@ -434,6 +504,7 @@ function TrayApp() {
                 onRefresh={handleRefresh}
                 taskCount={taskCount}
                 isOffline={isOffline}
+                onMinimize={handleToggleMiniTasks}
               />
               <TaskList
                 tasks={tasks}
@@ -504,6 +575,7 @@ function TrayApp() {
         <FocusMode
           task={focusTask}
           onExit={handleFocusExit}
+          onToggleComplete={toggleComplete}
           mode={focusMode}
           timeBoxMinutes={focusTimeBox}
         />

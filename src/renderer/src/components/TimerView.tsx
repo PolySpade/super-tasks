@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { Play, Pause, SkipForward, Square, Flame, ChevronDown, Minimize2, Maximize2 } from 'lucide-react'
+import { Play, Pause, SkipForward, Square, Flame, ChevronDown, Minimize2, Maximize2, CheckCircle2, ArrowRight } from 'lucide-react'
 import { Task, TaskList, PomodoroConfig, FocusStats } from '../types'
 import { usePomodoroTimer, PomodoroPhase } from '../hooks/usePomodoroTimer'
 
@@ -7,6 +7,8 @@ interface TimerViewProps {
   taskLists: TaskList[]
   mini?: boolean
   onToggleMini?: () => void
+  onToggleComplete?: (taskId: string, completed: boolean) => void
+  allTasks?: Task[]
 }
 
 const CIRCLE_RADIUS = 90
@@ -45,38 +47,46 @@ function flattenTasks(tasks: Task[]): Task[] {
   return flat
 }
 
-export function TimerView({ taskLists, mini, onToggleMini }: TimerViewProps) {
+export function TimerView({ taskLists, mini, onToggleMini, onToggleComplete }: TimerViewProps) {
   const [config, setConfig] = useState<PomodoroConfig | null>(null)
   const [stats, setStats] = useState<FocusStats | null>(null)
   const [selectedListId, setSelectedListId] = useState<string>('')
   const [selectedTaskId, setSelectedTaskId] = useState<string>('')
   const [totalMinutes, setTotalMinutes] = useState(0)
   const [started, setStarted] = useState(false)
+  const [showCompletionPrompt, setShowCompletionPrompt] = useState(false)
   const workStartRef = useRef<string>('')
   const totalMinutesRef = useRef(0)
   const [tasksByList, setTasksByList] = useState<{ task: Task; listId: string; listTitle: string }[]>([])
 
+  // Stabilise dependency — only re-fetch when list IDs actually change
+  const listIds = taskLists.map((l) => l.id).join(',')
+
   useEffect(() => {
+    if (!taskLists.length) return
     let cancelled = false
     ;(async () => {
-      const items: { task: Task; listId: string; listTitle: string }[] = []
-      for (const list of taskLists) {
-        try {
-          const res = await window.api.getTasks(list.id)
-          if (cancelled) return
-          if (res.success && res.data) {
-            for (const t of flattenTasks(res.data)) {
-              items.push({ task: t, listId: list.id, listTitle: list.title })
+      const results = await Promise.all(
+        taskLists.map(async (list) => {
+          try {
+            const res = await window.api.getTasks(list.id)
+            if (res.success && res.data) {
+              return flattenTasks(res.data).map((t) => ({
+                task: t,
+                listId: list.id,
+                listTitle: list.title
+              }))
             }
+          } catch {
+            // skip lists that fail to load
           }
-        } catch {
-          // skip lists that fail to load
-        }
-      }
-      if (!cancelled) setTasksByList(items)
+          return []
+        })
+      )
+      if (!cancelled) setTasksByList(results.flat())
     })()
     return () => { cancelled = true }
-  }, [taskLists])
+  }, [listIds])
 
   const incompleteTasks = selectedListId
     ? tasksByList.filter((i) => i.listId === selectedListId)
@@ -101,6 +111,11 @@ export function TimerView({ taskLists, mini, onToggleMini }: TimerViewProps) {
     }
 
     await window.api.logFocusSession(session)
+
+    if (selectedTaskId) {
+      setShowCompletionPrompt(true)
+    }
+
     await window.api.notify('Focus Complete', 'Time for a break!')
 
     if (config.logToCalendar && selectedTask) {
@@ -153,6 +168,18 @@ export function TimerView({ taskLists, mini, onToggleMini }: TimerViewProps) {
     return () => { cancelled = true }
   }, [])
 
+  const handleMarkComplete = () => {
+    if (selectedTaskId && onToggleComplete) {
+      onToggleComplete(selectedTaskId, true)
+    }
+    setShowCompletionPrompt(false)
+    handleStop()
+  }
+
+  const handleDismissPrompt = () => {
+    setShowCompletionPrompt(false)
+  }
+
   const handleStart = () => {
     if (!config) return
     timer.start(config)
@@ -162,6 +189,7 @@ export function TimerView({ taskLists, mini, onToggleMini }: TimerViewProps) {
   const handleStop = () => {
     timer.reset()
     setStarted(false)
+    setShowCompletionPrompt(false)
     totalMinutesRef.current = 0
     setTotalMinutes(0)
   }
@@ -305,6 +333,22 @@ export function TimerView({ taskLists, mini, onToggleMini }: TimerViewProps) {
             )}
           </div>
         </div>
+
+        {showCompletionPrompt && selectedTaskId && onToggleComplete && (
+          <div className="focus-completion-prompt">
+            <span className="focus-completion-label">Did you finish this task?</span>
+            <div className="focus-completion-actions">
+              <button className="focus-completion-btn focus-completion-yes" onClick={handleMarkComplete}>
+                <CheckCircle2 size={14} />
+                Yes, done
+              </button>
+              <button className="focus-completion-btn focus-completion-no" onClick={handleDismissPrompt}>
+                <ArrowRight size={14} />
+                Not yet
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Controls */}
         <div className="focus-controls">

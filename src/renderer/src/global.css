@@ -4166,6 +4166,65 @@ body {
   color: var(--text-secondary);
 }
 
+/* Task Completion Prompt */
+.focus-completion-prompt {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  background: var(--glass-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  margin: 8px 0;
+}
+
+.focus-completion-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.focus-completion-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.focus-completion-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 14px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  font-size: 12px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.focus-completion-yes {
+  background: var(--success);
+  color: #fff;
+  border-color: var(--success);
+}
+
+.focus-completion-yes:hover {
+  filter: brightness(1.1);
+}
+
+.focus-completion-no {
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+}
+
+.focus-completion-no:hover {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
 /* ═══════════════════════════════════════ */
 /* Suggested Task Card                    */
 /* ═══════════════════════════════════════ */
@@ -5676,4 +5735,166 @@ body {
 
 .persona-skip-btn:hover {
   color: var(--text-secondary);
+}
+
+/* Mini Tasks View */
+.app-mini-tasks {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: var(--bg-primary);
+  border: 1px solid var(--glass-border);
+  border-radius: 10px;
+  overflow: hidden;
+  position: relative;
+}
+
+.app-mini-tasks::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--mesh-gradient);
+  z-index: 0;
+  pointer-events: none;
+}
+
+.app-mini-tasks > * {
+  position: relative;
+  z-index: 1;
+}
+
+.mini-tasks-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 10px;
+  -webkit-app-region: drag;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.mini-tasks-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.mini-tasks-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  -webkit-app-region: no-drag;
+}
+
+.mini-tasks-actions .icon-btn {
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mini-tasks-offline-bar {
+  background: #3a3000;
+  color: #ffd54f;
+  padding: 2px 8px;
+  font-size: 10px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.mini-tasks-list {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.mini-tasks-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.mini-tasks-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.mini-tasks-list::-webkit-scrollbar-thumb {
+  background: var(--text-tertiary);
+  border-radius: 3px;
+}
+
+.mini-tasks-list::-webkit-scrollbar-thumb:hover {
+  background: var(--text-secondary);
+}
+
+.mini-tasks-list .task-list {
+  padding: 2px 0;
+  overflow-y: visible;
+}
+
+.mini-tasks-list .task-item {
+  padding-top: 4px;
+  padding-bottom: 4px;
+  min-height: unset;
+}
+
+.mini-tasks-list .task-title {
+  font-size: 11px;
+}
+
+.mini-tasks-list .task-meta {
+  font-size: 9px;
+}
+
+.mini-tasks-list .task-checkbox .checkmark {
+  width: 14px;
+  height: 14px;
+}
+
+.mini-tasks-list .completed-divider {
+  padding: 2px 12px;
+  font-size: 10px;
+}
+
+.mini-tasks-list .icon-btn {
+  width: 18px;
+  height: 18px;
+  padding: 0;
+}
+
+.app-mini-tasks .add-task-container {
+  flex-shrink: 0;
+  border-top: 1px solid var(--border);
+  background: var(--glass-1);
+}
+
+.app-mini-tasks .add-task-form {
+  padding: 6px 8px;
+  gap: 4px;
+}
+
+.app-mini-tasks .add-task-form input[type="text"] {
+  font-size: 11px;
+  padding: 6px 8px;
+}
+
+.app-mini-tasks .add-btn {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+}
+
+.app-mini-tasks .date-toggle {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+}
+
+.app-mini-tasks .subtask-indicator {
+  padding: 3px 8px;
+  font-size: 10px;
+}
+
+.app-mini-tasks .add-task-extras {
+  padding: 4px 8px 0;
 }
