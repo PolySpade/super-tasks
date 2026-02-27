@@ -30,6 +30,15 @@ nsis:
 portable:
   artifactName: "${productName}-Portable-${version}.${ext}"
 
+linux:
+  icon: resources/icon.png
+  target:
+    - target: tar.gz
+      arch:
+        - x64
+  category: Utility
+  artifactName: "${productName}-${version}-Linux.${ext}"
+
 asar: true
 
 extraResources:
