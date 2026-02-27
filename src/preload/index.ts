@@ -109,6 +109,8 @@ const api = {
   eodSave: (review: any) => ipcRenderer.invoke('eod:save', review),
   eodGetRecent: (count?: number) => ipcRenderer.invoke('eod:get-recent', count),
   eodGetAverageRating: (days?: number) => ipcRenderer.invoke('eod:get-average-rating', days),
+  eodGetMoodStats: () => ipcRenderer.invoke('eod:get-mood-stats'),
+  eodSaveQuickMood: (rating: number) => ipcRenderer.invoke('eod:save-quick-mood', rating),
 
   // Habits
   getHabits: () => ipcRenderer.invoke('habits:get-all'),

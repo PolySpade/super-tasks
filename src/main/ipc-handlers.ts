@@ -21,7 +21,7 @@ import { getMITs, setMITs, clearMITs } from './mit-store'
 import { getTaskTimeData, getAllTimeData, getHistoricalData } from './time-tracking-store'
 import { parseCapture } from './quick-capture-parser'
 import { hideCaptureWindow, setCaptureWindowSize } from './quick-capture-window'
-import { wasDoneToday, saveReview, getRecentReviews, getAverageRating } from './eod-review-store'
+import { wasDoneToday, saveReview, getRecentReviews, getAverageRating, getMoodStats, saveQuickMood } from './eod-review-store'
 import { wasCompletedToday as ritualCompletedToday, markComplete as markRitualComplete, getHistory as getRitualHistory } from './ritual-store'
 import { getNudgeConfig, setNudgeConfig, setTodaysPlan, reportBreakStart, reportTaskComplete } from './nudge-engine'
 import {
@@ -562,6 +562,24 @@ export function registerIpcHandlers(): void {
     try {
       const avg = getAverageRating(days)
       return { success: true, data: avg }
+    } catch (error: any) {
+      return { success: false, error: error.message }
+    }
+  })
+
+  ipcMain.handle('eod:get-mood-stats', () => {
+    try {
+      const stats = getMoodStats()
+      return { success: true, data: stats }
+    } catch (error: any) {
+      return { success: false, error: error.message }
+    }
+  })
+
+  ipcMain.handle('eod:save-quick-mood', (_event, rating: number) => {
+    try {
+      saveQuickMood(rating)
+      return { success: true }
     } catch (error: any) {
       return { success: false, error: error.message }
     }

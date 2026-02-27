@@ -1,5 +1,5 @@
-import { useState, useMemo, useEffect } from 'react'
-import { Calendar, Sparkles, Plus, Wand2, ClipboardList, Zap, Moon, Sun, Sunset } from 'lucide-react'
+import { useState, useMemo } from 'react'
+import { Calendar, Sparkles, Plus, Wand2, ClipboardList, Zap, Sun, Sunset } from 'lucide-react'
 import { Task, TaskList, EnergyLevel, TaskMetadata } from '../types'
 import { useDashboardData } from '../hooks/useDashboardData'
 import { useDeadlines } from '../hooks/useDeadlines'
@@ -12,6 +12,7 @@ import { AIRenameModal } from './AIRenameModal'
 import { MITSection } from './MITSection'
 import { EnergyBadge } from './EnergyBadge'
 import { HabitSection } from './HabitSection'
+import { MoodTracker } from './MoodTracker'
 
 interface DashboardProps {
   signedIn: boolean
@@ -62,15 +63,6 @@ export function Dashboard({
 
   const [showQuickAdd, setShowQuickAdd] = useState(false)
   const [showRename, setShowRename] = useState(false)
-  const [recentMoods, setRecentMoods] = useState<{ date: string; rating: number }[]>([])
-
-  useEffect(() => {
-    window.api.eodGetRecent(5).then((result) => {
-      if (result?.data) {
-        setRecentMoods(result.data.map((r: any) => ({ date: r.date, rating: r.rating })))
-      }
-    })
-  }, [])
 
   const today = new Date()
   const dateStr = today.toLocaleDateString('en-US', {
@@ -159,25 +151,7 @@ export function Dashboard({
             onSelectTask={onSelectTask}
           />
 
-          {recentMoods.length > 0 && (
-            <div className="mood-trend">
-              <Moon size={12} />
-              <span className="mood-trend-label">Mood</span>
-              <div className="mood-trend-dots">
-                {recentMoods.map((m) => (
-                  <div
-                    key={m.date}
-                    className="mood-dot"
-                    style={{
-                      backgroundColor: m.rating >= 4 ? 'var(--success)' : m.rating >= 3 ? 'var(--warning)' : 'var(--danger)',
-                      opacity: 0.6 + m.rating * 0.08
-                    }}
-                    title={`${m.date}: ${m.rating}/5`}
-                  />
-                ))}
-              </div>
-            </div>
-          )}
+          <MoodTracker onStartEODReview={onStartEODReview} />
 
           <HabitSection taskLists={taskLists} />
 
