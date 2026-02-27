@@ -1,11 +1,14 @@
 import { Tray, Menu, app, nativeImage } from 'electron'
 import { join } from 'path'
+import { is } from '@electron-toolkit/utils'
 import { toggleWindow, getWindow, setQuitting } from './window'
 
 let tray: Tray | null = null
 
 export function createTray(): Tray {
-  const iconPath = join(__dirname, '../../resources/tray-icon.ico')
+  const iconPath = is.dev
+    ? join(__dirname, '../../resources/tray-icon.ico')
+    : join(process.resourcesPath, 'tray-icon.ico')
 
   // Create a fallback icon if the file doesn't load
   let icon: Electron.NativeImage

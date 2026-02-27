@@ -8,6 +8,8 @@ export function getStartupEnabled(): boolean {
 export function setStartupEnabled(enabled: boolean): void {
   app.setLoginItemSettings({
     openAtLogin: enabled,
+    path: process.execPath,
+    name: 'SuperTasks',
     args: enabled ? ['--hidden'] : []
   })
 }

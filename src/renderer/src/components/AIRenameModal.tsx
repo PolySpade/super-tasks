@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { X, ArrowRight } from 'lucide-react'
 import { TaskList, Task, TaskMetadata } from '../types'
+import { parseMetaTag, appendMetaTag } from '../utils/task-meta'
 
 interface RenameProposal {
   taskId: string
@@ -16,12 +17,11 @@ type State = 'idle' | 'generating' | 'preview' | 'applying' | 'done'
 
 interface AIRenameModalProps {
   taskLists: TaskList[]
-  metadataMap: Record<string, TaskMetadata>
   onClose: () => void
   onApplied: () => void
 }
 
-export function AIRenameModal({ taskLists, metadataMap, onClose, onApplied }: AIRenameModalProps) {
+export function AIRenameModal({ taskLists, onClose, onApplied }: AIRenameModalProps) {
   const [state, setState] = useState<State>('idle')
   const [selectedLists, setSelectedLists] = useState<Set<string>>(
     new Set(taskLists.map((l) => l.id))
@@ -30,6 +30,7 @@ export function AIRenameModal({ taskLists, metadataMap, onClose, onApplied }: AI
   const [error, setError] = useState<string | null>(null)
   const [appliedCount, setAppliedCount] = useState(0)
   const [totalTasks, setTotalTasks] = useState(0)
+  const [taskMetaMap, setTaskMetaMap] = useState<Record<string, TaskMetadata>>({})
 
   const toggleList = (id: string) => {
     setSelectedLists((prev) => {
@@ -56,6 +57,7 @@ export function AIRenameModal({ taskLists, metadataMap, onClose, onApplied }: AI
 
       // Fetch tasks from all selected lists
       const allTasks: { id: string; title: string; notes?: string; due?: string; listId: string; listName?: string; parentTitle?: string; hasSubtasks?: boolean }[] = []
+      const metaMap: Record<string, TaskMetadata> = {}
 
       for (const listId of selectedLists) {
         const res = await window.api.getTasks(listId)
@@ -64,10 +66,12 @@ export function AIRenameModal({ taskLists, metadataMap, onClose, onApplied }: AI
           const flatten = (tasks: Task[], parentTitle?: string) => {
             for (const t of tasks) {
               if (t.status === 'needsAction') {
+                const { cleanNotes, meta } = parseMetaTag(t.notes || '')
+                metaMap[t.id] = meta
                 allTasks.push({
                   id: t.id,
                   title: t.title,
-                  notes: t.notes,
+                  notes: cleanNotes,
                   due: t.due,
                   listId,
                   listName,
@@ -81,6 +85,7 @@ export function AIRenameModal({ taskLists, metadataMap, onClose, onApplied }: AI
           flatten(res.data)
         }
       }
+      setTaskMetaMap(metaMap)
 
       if (allTasks.length === 0) {
         setError('No active tasks found in selected lists.')
@@ -97,7 +102,7 @@ export function AIRenameModal({ taskLists, metadataMap, onClose, onApplied }: AI
           notes: t.notes,
           listName: t.listName,
           due: t.due,
-          energyLevel: metadataMap[t.id]?.energyLevel,
+          energyLevel: metaMap[t.id]?.energyLevel,
           parentTitle: t.parentTitle,
           hasSubtasks: t.hasSubtasks
         }))
@@ -145,7 +150,12 @@ export function AIRenameModal({ taskLists, metadataMap, onClose, onApplied }: AI
     for (const p of selected) {
       const updates: { title?: string; notes?: string } = {}
       if (p.newTitle !== p.oldTitle) updates.title = p.newTitle
-      if (p.newNotes !== p.oldNotes) updates.notes = p.newNotes
+      if (p.newNotes !== p.oldNotes) {
+        const meta = taskMetaMap[p.taskId]
+        updates.notes = (meta?.energyLevel || meta?.timeBoxMinutes)
+          ? appendMetaTag(p.newNotes, meta)
+          : p.newNotes
+      }
       if (Object.keys(updates).length > 0) {
         await window.api.updateTask(p.listId, p.taskId, updates)
         count++

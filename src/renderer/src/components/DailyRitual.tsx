@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { X, ChevronRight, ChevronLeft, Trash2, Sparkles, Calendar, Zap, Trophy, ChevronDown } from 'lucide-react'
 import { Task, TaskList, TaskMetadata, EnergyLevel } from '../types'
 import { MITSection } from './MITSection'
+import { parseMetaTag, appendMetaTag } from '../utils/task-meta'
 
 interface DailyRitualProps {
   signedIn: boolean
@@ -11,8 +12,6 @@ interface DailyRitualProps {
   onComplete: () => void
   onDismiss: () => void
   onNavigateToPlan: () => void
-  metadataMap: Record<string, TaskMetadata>
-  onSetMetadata: (taskId: string, partial: Partial<TaskMetadata>) => void
 }
 
 function flattenTasks(tasks: Task[]): Task[] {
@@ -46,9 +45,7 @@ export function DailyRitual({
   onSetMITs,
   onComplete,
   onDismiss,
-  onNavigateToPlan,
-  metadataMap,
-  onSetMetadata
+  onNavigateToPlan
 }: DailyRitualProps) {
   const [step, setStep] = useState(0)
   const [droppedIds, setDroppedIds] = useState<Set<string>>(new Set())
@@ -58,12 +55,16 @@ export function DailyRitual({
   const [taskListMap, setTaskListMap] = useState<Record<string, string>>({})
   const [energyPickerTaskId, setEnergyPickerTaskId] = useState<string | null>(null)
   const [ritualListId, setRitualListId] = useState<string>('')
+  const [localMetaMap, setLocalMetaMap] = useState<Record<string, TaskMetadata>>({})
+  const [cleanNotesMap, setCleanNotesMap] = useState<Record<string, string>>({})
 
   useEffect(() => {
     let cancelled = false
     ;(async () => {
       const all: Task[] = []
       const listMap: Record<string, string> = {}
+      const metaMap: Record<string, TaskMetadata> = {}
+      const notesMap: Record<string, string> = {}
       for (const list of taskLists) {
         const res = await window.api.getTasks(list.id)
         if (cancelled) return
@@ -71,11 +72,16 @@ export function DailyRitual({
           all.push(...res.data)
           for (const t of flattenTasks(res.data)) {
             listMap[t.id] = list.id
+            const { cleanNotes, meta } = parseMetaTag(t.notes || '')
+            metaMap[t.id] = meta
+            notesMap[t.id] = cleanNotes
           }
         }
       }
       setAllTasksFromAllLists(all)
       setTaskListMap(listMap)
+      setLocalMetaMap(metaMap)
+      setCleanNotesMap(notesMap)
     })()
     return () => { cancelled = true }
   }, [taskLists])
@@ -125,6 +131,21 @@ export function DailyRitual({
       next.delete(taskId)
       return next
     })
+  }
+
+  const handleSetEnergy = (taskId: string, energyLevel: EnergyLevel | undefined) => {
+    const current = localMetaMap[taskId] || {}
+    const merged: TaskMetadata = { ...current, energyLevel }
+    if (!merged.energyLevel) delete merged.energyLevel
+
+    setLocalMetaMap((prev) => ({ ...prev, [taskId]: merged }))
+
+    const cleanNotes = cleanNotesMap[taskId] || ''
+    const fullNotes = appendMetaTag(cleanNotes, merged)
+    const listId = taskListMap[taskId]
+    if (listId) {
+      window.api.updateTask(listId, taskId, { notes: fullNotes })
+    }
   }
 
   const handleFinish = () => {
@@ -228,14 +249,14 @@ export function DailyRitual({
                     onClick={() => setEnergyPickerTaskId(energyPickerTaskId === t.id ? null : t.id)}
                   >
                     <span className="ritual-task-title">{t.title}</span>
-                    {metadataMap[t.id]?.energyLevel ? (
+                    {localMetaMap[t.id]?.energyLevel ? (
                       <span
                         className="ritual-energy-dot"
-                        style={{ background: ENERGY_OPTIONS.find((e) => e.value === metadataMap[t.id].energyLevel)?.color }}
-                        title={metadataMap[t.id].energyLevel}
+                        style={{ background: ENERGY_OPTIONS.find((e) => e.value === localMetaMap[t.id].energyLevel)?.color }}
+                        title={localMetaMap[t.id].energyLevel}
                       >
                         <Zap size={10} />
-                        {metadataMap[t.id].energyLevel}
+                        {localMetaMap[t.id].energyLevel}
                       </span>
                     ) : (
                       <span className="ritual-energy-dot ritual-energy-unset">
@@ -247,11 +268,11 @@ export function DailyRitual({
                         {ENERGY_OPTIONS.map((opt) => (
                           <button
                             key={opt.value}
-                            className={`ritual-energy-option ${metadataMap[t.id]?.energyLevel === opt.value ? 'active' : ''}`}
+                            className={`ritual-energy-option ${localMetaMap[t.id]?.energyLevel === opt.value ? 'active' : ''}`}
                             style={{ '--energy-color': opt.color } as React.CSSProperties}
                             onClick={() => {
-                              const newVal = metadataMap[t.id]?.energyLevel === opt.value ? undefined : opt.value
-                              onSetMetadata(t.id, { energyLevel: newVal })
+                              const newVal = localMetaMap[t.id]?.energyLevel === opt.value ? undefined : opt.value
+                              handleSetEnergy(t.id, newVal)
                               setEnergyPickerTaskId(null)
                             }}
                           >

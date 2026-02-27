@@ -32,5 +32,11 @@ portable:
 
 asar: true
 
+extraResources:
+  - from: resources/tray-icon.ico
+    to: tray-icon.ico
+  - from: resources/icon.ico
+    to: icon.ico
+
 extraMetadata:
   main: ./out/main/index.js

@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { ArrowLeft, CheckCircle2, AlertCircle, Calendar, Clock, ChevronRight, Target, Smile } from 'lucide-react'
 import { Task, TaskList, FocusSession, TaskMetadata } from '../types'
+import { parseMetaTag } from '../utils/task-meta'
 
 interface WeeklyReviewProps {
   signedIn: boolean
@@ -63,20 +64,26 @@ export function WeeklyReview({ signedIn, taskLists, onBack, onSelectTask, onUpda
 
       const sessionsResult = await window.api.getFocusWeekSessions()
 
-      // Calculate estimation accuracy from time tracking + metadata
-      const [timeResult, metaResult] = await Promise.all([
-        window.api.getAllTimeTracking(),
-        window.api.getAllTaskMetadata()
-      ])
+      // Calculate estimation accuracy from time tracking + metadata parsed from notes
+      const timeResult = await window.api.getAllTimeTracking()
 
       if (!cancelled) {
         setAllTasks(tasks)
         setWeekSessions(sessionsResult?.data || [])
 
+        // Build metadata map from fetched tasks
+        const allFlat = flattenTasks(tasks)
+        const metaData: Record<string, TaskMetadata> = {}
+        for (const t of allFlat) {
+          const { meta } = parseMetaTag(t.notes || '')
+          if (meta.timeBoxMinutes) {
+            metaData[t.id] = meta
+          }
+        }
+
         // Compute accuracy: tasks with both estimate and actual
-        if (timeResult?.data && metaResult?.data) {
+        if (timeResult?.data) {
           const timeData = timeResult.data as Record<string, { totalMinutes: number }>
-          const metaData = metaResult.data as Record<string, TaskMetadata>
           let totalRatio = 0
           let count = 0
           for (const [taskId, td] of Object.entries(timeData)) {

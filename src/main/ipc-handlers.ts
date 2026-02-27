@@ -16,12 +16,7 @@ import { getSettings, updateSettings } from './settings-store'
 import { getPersona, setPersona, isPersonaConfigured } from './persona-store'
 import { generatePlan, validateApiKey, generateSubtasks, workBackwards, renameTasks } from './ai-planner'
 import { getStartupEnabled, setStartupEnabled } from './startup'
-import {
-  getTaskMetadata,
-  setTaskMetadata,
-  getAllTaskMetadata,
-  deleteTaskMetadata
-} from './task-metadata-store'
+import { appendMetaTag } from './task-meta-utils'
 import { getMITs, setMITs, clearMITs } from './mit-store'
 import { getTaskTimeData, getAllTimeData, getHistoricalData } from './time-tracking-store'
 import { parseCapture } from './quick-capture-parser'
@@ -52,12 +47,16 @@ import {
 } from './focus-store'
 import { hasDriveAppDataScope } from './google-auth'
 import { syncAllStores, getLastSyncTime } from './drive-sync'
+import { initDriveSync } from './drive-sync-init'
 
 export function registerIpcHandlers(): void {
   // Auth
   ipcMain.handle('auth:sign-in', async () => {
     try {
       const success = await signIn()
+      if (success) {
+        initDriveSync()
+      }
       return { success }
     } catch (error: any) {
       return { success: false, error: error.message }
@@ -431,43 +430,6 @@ export function registerIpcHandlers(): void {
     }
   })
 
-  // Task metadata
-  ipcMain.handle('task-meta:get', (_event, taskId: string) => {
-    try {
-      const meta = getTaskMetadata(taskId)
-      return { success: true, data: meta }
-    } catch (error: any) {
-      return { success: false, error: error.message }
-    }
-  })
-
-  ipcMain.handle('task-meta:set', (_event, taskId: string, partial: any) => {
-    try {
-      setTaskMetadata(taskId, partial)
-      return { success: true }
-    } catch (error: any) {
-      return { success: false, error: error.message }
-    }
-  })
-
-  ipcMain.handle('task-meta:get-all', () => {
-    try {
-      const all = getAllTaskMetadata()
-      return { success: true, data: all }
-    } catch (error: any) {
-      return { success: false, error: error.message }
-    }
-  })
-
-  ipcMain.handle('task-meta:delete', (_event, taskId: string) => {
-    try {
-      deleteTaskMetadata(taskId)
-      return { success: true }
-    } catch (error: any) {
-      return { success: false, error: error.message }
-    }
-  })
-
   // MIT tasks
   ipcMain.handle('mit:get', (_event, date: string) => {
     try {
@@ -621,17 +583,19 @@ export function registerIpcHandlers(): void {
       const today = new Date().toISOString().split('T')[0]
       if (isDueToday(created, today)) {
         try {
-          const task = await createTask(
-            created.taskListId,
-            created.title,
-            `Recurring habit (${created.recurrence})`
-          )
+          const notes = `Recurring habit (${created.recurrence})`
+          let fullNotes = notes
           if (created.energyLevel || created.timeBoxMinutes) {
             const meta: any = {}
             if (created.energyLevel) meta.energyLevel = created.energyLevel
             if (created.timeBoxMinutes) meta.timeBoxMinutes = created.timeBoxMinutes
-            setTaskMetadata(task.id, meta)
+            fullNotes = appendMetaTag(notes, meta)
           }
+          const task = await createTask(
+            created.taskListId,
+            created.title,
+            fullNotes
+          )
           setHabitInstance(created.id, today, task.id)
         } catch {
           // Task creation failed — scheduler will retry later
@@ -739,18 +703,17 @@ export function registerIpcHandlers(): void {
       }
 
       const timestamp = new Date().toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })
-      const notes = parsed.notes
+      const notesBody = parsed.notes
         ? `Created: ${timestamp}\n${parsed.notes}`
         : `Created: ${timestamp}`
-      const task = await createTask(listId, parsed.title, notes, parsed.due)
-
-      // Set metadata
+      let fullNotes = notesBody
       if (finalEnergy || finalTime) {
         const meta: any = {}
         if (finalEnergy) meta.energyLevel = finalEnergy
         if (finalTime) meta.timeBoxMinutes = finalTime
-        setTaskMetadata(task.id, meta)
+        fullNotes = appendMetaTag(notesBody, meta)
       }
+      const task = await createTask(listId, parsed.title, fullNotes, parsed.due)
 
       new Notification({
         title: 'Task Captured',

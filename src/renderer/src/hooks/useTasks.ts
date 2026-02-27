@@ -1,10 +1,14 @@
-import { useState, useEffect, useCallback, useMemo } from 'react'
-import { Task } from '../types'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
+import { Task, TaskMetadata } from '../types'
+import { parseMetaTag, appendMetaTag } from '../utils/task-meta'
 
 export function useTasks(signedIn: boolean, taskListId: string) {
   const [flatTasks, setFlatTasks] = useState<Task[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [metadataMap, setMetadataMap] = useState<Record<string, TaskMetadata>>({})
+  const metaMapRef = useRef<Record<string, TaskMetadata>>({})
+  const flatTasksRef = useRef<Task[]>([])
 
   const fetchTasks = useCallback(async () => {
     if (!signedIn || !taskListId) return
@@ -12,18 +16,27 @@ export function useTasks(signedIn: boolean, taskListId: string) {
     setError(null)
     const result = await window.api.getTasks(taskListId)
     if (result.success && result.data) {
-      setFlatTasks(
-        result.data.map((t: any) => ({
+      const newMetaMap: Record<string, TaskMetadata> = {}
+      const parsed = result.data.map((t: any) => {
+        const { cleanNotes, meta } = parseMetaTag(t.notes || '')
+        if (meta.energyLevel || meta.timeBoxMinutes) {
+          newMetaMap[t.id] = meta
+        }
+        return {
           id: t.id,
           title: t.title,
           status: t.status,
-          notes: t.notes || '',
+          notes: cleanNotes,
           due: t.due || undefined,
           completed: t.completed,
           updated: t.updated,
           parent: t.parent || undefined
-        }))
-      )
+        }
+      })
+      setFlatTasks(parsed)
+      flatTasksRef.current = parsed
+      metaMapRef.current = newMetaMap
+      setMetadataMap(newMetaMap)
     } else {
       setError(result.error || 'Failed to load tasks')
     }
@@ -62,27 +75,42 @@ export function useTasks(signedIn: boolean, taskListId: string) {
       if (!taskListId) return
       const tempId = `temp-${Date.now()}`
       const tempTask: Task = { id: tempId, title, status: 'needsAction', notes, due, parent: parentId }
-      setFlatTasks((prev) => [tempTask, ...prev])
+      setFlatTasks((prev) => {
+        const newList = [tempTask, ...prev]
+        flatTasksRef.current = newList
+        return newList
+      })
 
       const result = await window.api.createTask(taskListId, title, notes, due, parentId)
       if (result.success && result.data) {
-        setFlatTasks((prev) =>
-          prev.map((t) =>
+        const { cleanNotes, meta } = parseMetaTag(result.data.notes || '')
+        if (meta.energyLevel || meta.timeBoxMinutes) {
+          metaMapRef.current = { ...metaMapRef.current, [result.data.id]: meta }
+          setMetadataMap({ ...metaMapRef.current })
+        }
+        setFlatTasks((prev) => {
+          const newList = prev.map((t) =>
             t.id === tempId
               ? {
                   id: result.data.id,
                   title: result.data.title,
                   status: result.data.status,
-                  notes: result.data.notes || '',
+                  notes: cleanNotes,
                   due: result.data.due || undefined,
                   updated: result.data.updated,
                   parent: result.data.parent || undefined
                 }
               : t
           )
-        )
+          flatTasksRef.current = newList
+          return newList
+        })
       } else {
-        setFlatTasks((prev) => prev.filter((t) => t.id !== tempId))
+        setFlatTasks((prev) => {
+          const newList = prev.filter((t) => t.id !== tempId)
+          flatTasksRef.current = newList
+          return newList
+        })
         setError(result.error || 'Failed to create task')
       }
     },
@@ -92,8 +120,9 @@ export function useTasks(signedIn: boolean, taskListId: string) {
   const updateTask = useCallback(
     async (taskId: string, updates: { title?: string; notes?: string; due?: string | null }) => {
       if (!taskListId) return
-      setFlatTasks((prev) =>
-        prev.map((t) =>
+      // Optimistic update with clean notes
+      setFlatTasks((prev) => {
+        const newList = prev.map((t) =>
           t.id === taskId
             ? {
                 ...t,
@@ -103,12 +132,59 @@ export function useTasks(signedIn: boolean, taskListId: string) {
               }
             : t
         )
-      )
+        flatTasksRef.current = newList
+        return newList
+      })
 
-      const result = await window.api.updateTask(taskListId, taskId, updates)
+      // Re-append meta before sending to API
+      const apiUpdates = { ...updates }
+      if (apiUpdates.notes !== undefined) {
+        const meta = metaMapRef.current[taskId]
+        if (meta) {
+          apiUpdates.notes = appendMetaTag(apiUpdates.notes, meta)
+        }
+      }
+
+      const result = await window.api.updateTask(taskListId, taskId, apiUpdates)
       if (!result.success) {
         fetchTasks()
         setError(result.error || 'Failed to update task')
+      }
+    },
+    [taskListId, fetchTasks]
+  )
+
+  const setMeta = useCallback(
+    async (taskId: string, partial: Partial<TaskMetadata>) => {
+      if (!taskListId) return
+
+      // Merge metadata
+      const current = metaMapRef.current[taskId] || {}
+      const merged: TaskMetadata = { ...current, ...partial }
+
+      // Clean up undefined/zero values
+      if (!merged.energyLevel) delete merged.energyLevel
+      if (!merged.timeBoxMinutes) delete merged.timeBoxMinutes
+
+      // Optimistic update
+      const newMap = { ...metaMapRef.current }
+      if (merged.energyLevel || merged.timeBoxMinutes) {
+        newMap[taskId] = merged
+      } else {
+        delete newMap[taskId]
+      }
+      metaMapRef.current = newMap
+      setMetadataMap(newMap)
+
+      // Find the task's current clean notes
+      const task = flatTasksRef.current.find((t) => t.id === taskId)
+      const cleanNotes = task?.notes || ''
+      const fullNotes = appendMetaTag(cleanNotes, merged)
+
+      // Call API with updated notes
+      const result = await window.api.updateTask(taskListId, taskId, { notes: fullNotes })
+      if (!result.success) {
+        fetchTasks()
       }
     },
     [taskListId, fetchTasks]
@@ -125,11 +201,16 @@ export function useTasks(signedIn: boolean, taskListId: string) {
           idsToRemove.add(t.id)
         }
       }
-      setFlatTasks((t) => t.filter((task) => !idsToRemove.has(task.id)))
+      setFlatTasks((t) => {
+        const newList = t.filter((task) => !idsToRemove.has(task.id))
+        flatTasksRef.current = newList
+        return newList
+      })
 
       const result = await window.api.deleteTask(taskListId, taskId)
       if (!result.success) {
         setFlatTasks(prev)
+        flatTasksRef.current = prev
         setError(result.error || 'Failed to delete task')
       }
     },
@@ -175,6 +256,8 @@ export function useTasks(signedIn: boolean, taskListId: string) {
     removeTask,
     toggleComplete,
     refreshTasks: fetchTasks,
-    clearError: () => setError(null)
+    clearError: () => setError(null),
+    metadataMap,
+    setMeta
   }
 }

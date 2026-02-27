@@ -1,6 +1,6 @@
 import { getAllHabits, isDueToday, getTodaysHabits, setHabitInstance } from './habit-store'
 import { createTask } from './google-tasks-api'
-import { setTaskMetadata } from './task-metadata-store'
+import { appendMetaTag } from './task-meta-utils'
 
 let schedulerInterval: ReturnType<typeof setInterval> | null = null
 
@@ -12,19 +12,20 @@ async function processHabits(): Promise<void> {
     // Only create task if no task ID exists for today
     if (!habit.taskId) {
       try {
-        const task = await createTask(
-          habit.taskListId,
-          habit.title,
-          `Recurring habit (${habit.recurrence})`
-        )
-
-        // Set metadata
+        const notes = `Recurring habit (${habit.recurrence})`
+        let fullNotes = notes
         if (habit.energyLevel || habit.timeBoxMinutes) {
           const meta: any = {}
           if (habit.energyLevel) meta.energyLevel = habit.energyLevel
           if (habit.timeBoxMinutes) meta.timeBoxMinutes = habit.timeBoxMinutes
-          setTaskMetadata(task.id, meta)
+          fullNotes = appendMetaTag(notes, meta)
         }
+
+        const task = await createTask(
+          habit.taskListId,
+          habit.title,
+          fullNotes
+        )
 
         // Record the instance
         setHabitInstance(habit.id, today, task.id)

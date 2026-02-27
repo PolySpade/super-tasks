@@ -6,16 +6,16 @@ import { TimeBlockRow } from './TimeBlock'
 import { PlanConfirm } from './PlanConfirm'
 import { BlockFormModal } from './BlockFormModal'
 import { Sparkles, Calendar, CheckCircle, AlertCircle, Settings, Plus, Hammer } from 'lucide-react'
+import { parseMetaTag } from '../utils/task-meta'
 
 interface PlanViewProps {
   signedIn: boolean
   taskLists: TaskList[]
   onOpenSettings: () => void
-  metadataMap: Record<string, TaskMetadata>
   mits: string[]
 }
 
-export function PlanView({ signedIn, taskLists, onOpenSettings, metadataMap, mits }: PlanViewProps) {
+export function PlanView({ signedIn, taskLists, onOpenSettings, mits }: PlanViewProps) {
   const { events, loading: eventsLoading, refresh: refreshEvents } = useCalendar(signedIn)
   const { plan, state, error, generatePlan, confirmPlan, rejectBlock, rejectTask, reset, startManualPlan, addBlock, editBlock } = usePlanner()
   const [settings, setSettings] = useState<PlannerSettings | null>(null)
@@ -73,6 +73,7 @@ export function PlanView({ signedIn, taskLists, onOpenSettings, metadataMap, mit
     // Fetch tasks from all selected lists, tracking which list each task belongs to
     const allTasks: Task[] = []
     const taskListNames: Record<string, string> = {}
+    const localMetaMap: Record<string, TaskMetadata> = {}
     for (const listId of selectedListIds) {
       const result = await window.api.getTasks(listId)
       if (result.success && result.data) {
@@ -80,6 +81,10 @@ export function PlanView({ signedIn, taskLists, onOpenSettings, metadataMap, mit
         const assignListName = (tasks: Task[]) => {
           for (const t of tasks) {
             if (listName) taskListNames[t.id] = listName
+            const { meta } = parseMetaTag(t.notes || '')
+            if (meta.energyLevel || meta.timeBoxMinutes) {
+              localMetaMap[t.id] = meta
+            }
             if (t.children) assignListName(t.children)
           }
         }
@@ -88,7 +93,7 @@ export function PlanView({ signedIn, taskLists, onOpenSettings, metadataMap, mit
       }
     }
 
-    generatePlan(allTasks, events, settings, mits, metadataMap, taskListNames)
+    generatePlan(allTasks, events, settings, mits, localMetaMap, taskListNames)
   }
 
   const handleConfirm = () => {

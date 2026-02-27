@@ -3,7 +3,10 @@ import { join } from 'path'
 import { is } from '@electron-toolkit/utils'
 
 function getAppIcon(): Electron.NativeImage {
-  return nativeImage.createFromPath(join(__dirname, '../../resources/icon.ico'))
+  const iconPath = is.dev
+    ? join(__dirname, '../../resources/icon.ico')
+    : join(process.resourcesPath, 'icon.ico')
+  return nativeImage.createFromPath(iconPath)
 }
 
 let mainWindow: BrowserWindow | null = null

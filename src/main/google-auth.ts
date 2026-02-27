@@ -95,16 +95,41 @@ export async function signIn(): Promise<boolean> {
 
 export async function restoreSession(): Promise<boolean> {
   const tokens = loadTokens()
-  if (!tokens?.refresh_token) return false
-  const client = getAuthClient()
-  client.setCredentials(tokens)
-  try {
-    await client.getAccessToken()
-    return true
-  } catch {
-    clearTokens()
+  if (!tokens?.refresh_token) {
+    console.warn('[auth] No refresh token found — cannot restore session')
     return false
   }
+  const client = getAuthClient()
+  client.setCredentials(tokens)
+
+  // Retry with a short delay to handle transient network issues at startup
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      await client.getAccessToken()
+      return true
+    } catch (err: any) {
+      const status = err?.response?.status ?? err?.code
+      const msg = err?.response?.data?.error ?? err?.message ?? String(err)
+      console.error(`[auth] Restore attempt ${attempt}/3 failed (${status}):`, msg)
+
+      // Definitive auth errors — token is revoked or invalid, no point retrying
+      if (status === 400 || status === 401 || msg === 'invalid_grant') {
+        console.warn('[auth] Token permanently invalid — clearing credentials')
+        clearTokens()
+        return false
+      }
+
+      // Transient failure — wait before retrying
+      if (attempt < 3) {
+        await new Promise((r) => setTimeout(r, attempt * 2000))
+      }
+    }
+  }
+
+  // All retries exhausted but tokens may still be valid later (e.g. network came back)
+  // Keep tokens so next app launch or window-show can try again
+  console.warn('[auth] All restore attempts failed — keeping tokens for later retry')
+  return false
 }
 
 export function signOut(): void {

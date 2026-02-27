@@ -84,12 +84,6 @@ const api = {
   setWindowSize: (width: number, height: number) => ipcRenderer.invoke('window:set-size', width, height),
   getWindowSize: () => ipcRenderer.invoke('window:get-size'),
 
-  // Task metadata
-  getTaskMetadata: (taskId: string) => ipcRenderer.invoke('task-meta:get', taskId),
-  setTaskMetadata: (taskId: string, partial: any) => ipcRenderer.invoke('task-meta:set', taskId, partial),
-  getAllTaskMetadata: () => ipcRenderer.invoke('task-meta:get-all'),
-  deleteTaskMetadata: (taskId: string) => ipcRenderer.invoke('task-meta:delete', taskId),
-
   // MIT tasks
   getMITs: (date: string) => ipcRenderer.invoke('mit:get', date),
   setMITs: (date: string, taskIds: string[]) => ipcRenderer.invoke('mit:set', date, taskIds),

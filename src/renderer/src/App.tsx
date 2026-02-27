@@ -2,7 +2,6 @@ import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useAuth } from './hooks/useAuth'
 import { useTaskLists } from './hooks/useTaskLists'
 import { useTasks } from './hooks/useTasks'
-import { useTaskMetadata } from './hooks/useTaskMetadata'
 import { useMITs } from './hooks/useMITs'
 import { Task } from './types'
 import { LoginScreen } from './components/LoginScreen'
@@ -59,10 +58,11 @@ function TrayApp() {
     removeTask,
     toggleComplete,
     refreshTasks,
-    clearError
+    clearError,
+    metadataMap,
+    setMeta
   } = useTasks(signedIn, selectedListId)
 
-  const { metadataMap, setMetadata, refreshMetadata } = useTaskMetadata()
   const { mits, setMITs, addMIT, removeMIT, isMIT } = useMITs()
   const { shouldShow: autoShowEOD, dismiss: dismissAutoEOD } = useEODReview(signedIn)
   const [manualEOD, setManualEOD] = useState(false)
@@ -116,7 +116,6 @@ function TrayApp() {
     const cleanup = window.api.onWindowShown(() => {
       refreshLists()
       refreshTasks()
-      refreshMetadata()
       // Check offline queue and try to process
       window.api.processOfflineQueue().then(() => {
         window.api.getOfflineQueue().then((res) => {
@@ -280,7 +279,6 @@ function TrayApp() {
       // Shrink to mini timer
       setTab('timer')
       setView('timer')
-      setSelectedTask(null)
       await window.api.setWindowSize(220, 220)
       setMiniTimer(true)
     }
@@ -333,14 +331,6 @@ function TrayApp() {
       <div className="app">
         <TitleBar onSettingsClick={() => {}} onClose={handleClose} title="SuperTasks" />
         <LoginScreen onSignIn={signIn} loading={authLoading} />
-      </div>
-    )
-  }
-
-  if (miniTimer) {
-    return (
-      <div className="app app-mini">
-        <TimerView taskLists={taskLists} mini onToggleMini={handleToggleMiniTimer} onToggleComplete={toggleComplete} />
       </div>
     )
   }
@@ -398,25 +388,27 @@ function TrayApp() {
   }
 
   return (
-    <div className="app">
-      <TitleBar
-        onSettingsClick={() => setView(view === 'settings' ? (tab === 'calendar' ? 'dashboard' : tab) : 'settings')}
-        onClose={handleClose}
-        showBack={view === 'detail' || view === 'settings' || view === 'deadlines' || view === 'weekly-review'}
-        onBack={
-          view === 'detail'
-            ? handleBackFromDetail
-            : view === 'deadlines' || view === 'weekly-review'
-              ? () => setView('dashboard')
-              : () => setView(tab === 'calendar' ? 'dashboard' : tab)
-        }
-        title={getTitle()}
-        isOffline={isOffline}
-      />
+    <div className={`app ${miniTimer ? 'app-mini' : ''}`}>
+      {!miniTimer && (
+        <TitleBar
+          onSettingsClick={() => setView(view === 'settings' ? (tab === 'calendar' ? 'dashboard' : tab) : 'settings')}
+          onClose={handleClose}
+          showBack={view === 'detail' || view === 'settings' || view === 'deadlines' || view === 'weekly-review'}
+          onBack={
+            view === 'detail'
+              ? handleBackFromDetail
+              : view === 'deadlines' || view === 'weekly-review'
+                ? () => setView('dashboard')
+                : () => setView(tab === 'calendar' ? 'dashboard' : tab)
+          }
+          title={getTitle()}
+          isOffline={isOffline}
+        />
+      )}
 
-      {error && <ErrorBanner message={error} onDismiss={clearError} />}
+      {!miniTimer && error && <ErrorBanner message={error} onDismiss={clearError} />}
 
-      {pendingOffline > 0 && (
+      {!miniTimer && pendingOffline > 0 && (
         <div style={{
           background: '#3a3000',
           color: '#ffd54f',
@@ -429,7 +421,9 @@ function TrayApp() {
         </div>
       )}
 
-      {view === 'settings' ? (
+      {miniTimer ? (
+        <TimerView taskLists={taskLists} mini onToggleMini={handleToggleMiniTimer} onToggleComplete={toggleComplete} />
+      ) : view === 'settings' ? (
         <SettingsPanel onSignOut={handleSignOut} />
       ) : view === 'detail' && selectedTask ? (
         <TaskDetail
@@ -440,14 +434,13 @@ function TrayApp() {
           onToggle={toggleComplete}
           onFocusStart={handleFocusStart}
           metadata={metadataMap[selectedTask.id]}
-          onSetMetadata={setMetadata}
+          onSetMetadata={setMeta}
         />
       ) : view === 'plan' ? (
         <PlanView
           signedIn={signedIn}
           taskLists={taskLists}
           onOpenSettings={handleOpenSettings}
-          metadataMap={metadataMap}
           mits={mits}
         />
       ) : view === 'deadlines' ? (
@@ -535,7 +528,7 @@ function TrayApp() {
       )}
 
       {/* Bottom tab bar */}
-      {signedIn && !authLoading && view !== 'detail' && view !== 'settings' && view !== 'deadlines' && view !== 'weekly-review' && (
+      {!miniTimer && signedIn && !authLoading && view !== 'detail' && view !== 'settings' && view !== 'deadlines' && view !== 'weekly-review' && (
         <div className="tab-bar">
           <button
             className={`tab-bar-btn ${tab === 'dashboard' ? 'active' : ''}`}
@@ -576,7 +569,7 @@ function TrayApp() {
       )}
 
       {/* Focus mode overlay */}
-      {focusTask && (
+      {!miniTimer && focusTask && (
         <FocusMode
           task={focusTask}
           onExit={handleFocusExit}
@@ -587,7 +580,7 @@ function TrayApp() {
       )}
 
       {/* End-of-day review overlay */}
-      {shouldShowEOD && !focusTask && !shouldShowRitual && (
+      {!miniTimer && shouldShowEOD && !focusTask && !shouldShowRitual && (
         <EODReview
           signedIn={signedIn}
           taskLists={taskLists}
@@ -597,7 +590,7 @@ function TrayApp() {
       )}
 
       {/* Daily planning ritual overlay */}
-      {shouldShowRitual && !focusTask && (
+      {!miniTimer && shouldShowRitual && !focusTask && (
         <DailyRitual
           signedIn={signedIn}
           taskLists={taskLists}
@@ -606,13 +599,11 @@ function TrayApp() {
           onComplete={completeRitual}
           onDismiss={dismissRitual}
           onNavigateToPlan={() => { completeRitual(); handleTabChange('plan') }}
-          metadataMap={metadataMap}
-          onSetMetadata={setMetadata}
         />
       )}
 
       {/* Persona setup modal */}
-      {showPersonaSetup && (
+      {!miniTimer && showPersonaSetup && (
         <PersonaSetupModal
           onComplete={() => setShowPersonaSetup(false)}
           onSkip={() => setShowPersonaSetup(false)}

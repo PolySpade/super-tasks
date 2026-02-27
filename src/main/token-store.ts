@@ -23,7 +23,8 @@ export function loadTokens(): TokenData | null {
     const buffer = Buffer.from(data, 'base64')
     const json = safeStorage.decryptString(buffer)
     return JSON.parse(json)
-  } catch {
+  } catch (err) {
+    console.error('[auth] Failed to decrypt stored tokens:', err)
     return null
   }
 }

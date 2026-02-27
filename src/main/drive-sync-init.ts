@@ -7,7 +7,6 @@ import { store as settingsStore } from './settings-store'
 import { store as personaStore } from './persona-store'
 import { store as ritualStore } from './ritual-store'
 import { store as eodReviewStore } from './eod-review-store'
-import { store as taskMetadataStore } from './task-metadata-store'
 import { store as timeTrackingStore } from './time-tracking-store'
 import { store as nudgeSettingsStore } from './nudge-engine'
 import { store as weeklyReviewStore } from './weekly-review-store'
@@ -20,14 +19,22 @@ const syncableStores = [
   { name: 'persona', store: personaStore },
   { name: 'daily-ritual', store: ritualStore },
   { name: 'eod-reviews', store: eodReviewStore },
-  { name: 'task-metadata', store: taskMetadataStore },
   { name: 'time-tracking', store: timeTrackingStore },
   { name: 'nudge-settings', store: nudgeSettingsStore },
   { name: 'weekly-review-notif', store: weeklyReviewStore }
 ]
 
+let initialized = false
+
 export function initDriveSync(): void {
   if (!hasDriveAppDataScope()) return
+
+  if (initialized) {
+    startPeriodicSync()
+    return
+  }
+
+  initialized = true
 
   for (const { name, store, opts } of syncableStores) {
     registerSyncableStore(name, store, opts)
