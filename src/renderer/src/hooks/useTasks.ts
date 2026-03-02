@@ -218,8 +218,9 @@ export function useTasks(signedIn: boolean, taskListId: string) {
   )
 
   const toggleComplete = useCallback(
-    async (taskId: string, completed: boolean) => {
-      if (!taskListId) return
+    async (taskId: string, completed: boolean, overrideListId?: string) => {
+      const listId = overrideListId || taskListId
+      if (!listId) return
       setFlatTasks((prev) =>
         prev.map((t) =>
           t.id === taskId
@@ -228,7 +229,23 @@ export function useTasks(signedIn: boolean, taskListId: string) {
         )
       )
 
-      const result = await window.api.toggleTask(taskListId, taskId, completed)
+      let result = await window.api.toggleTask(listId, taskId, completed)
+
+      // If task not found in current list, search all lists (MIT / cross-list tasks)
+      if (!result.success && result.error?.includes('Not Found')) {
+        const listsResult = await window.api.getTaskLists()
+        if (listsResult.success && listsResult.data) {
+          for (const list of listsResult.data) {
+            if (list.id === listId) continue
+            const retry = await window.api.toggleTask(list.id, taskId, completed)
+            if (retry.success) {
+              result = retry
+              break
+            }
+          }
+        }
+      }
+
       if (!result.success) {
         setFlatTasks((prev) =>
           prev.map((t) =>

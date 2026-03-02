@@ -1,6 +1,6 @@
 {
   "name": "SuperTasks",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "A SuperCharged Google Tasks system tray app for Windows",
   "author": "Donald",
   "main": "./out/main/index.js",

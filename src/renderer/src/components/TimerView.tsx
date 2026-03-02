@@ -7,7 +7,7 @@ interface TimerViewProps {
   taskLists: TaskList[]
   mini?: boolean
   onToggleMini?: () => void
-  onToggleComplete?: (taskId: string, completed: boolean) => void
+  onToggleComplete?: (taskId: string, completed: boolean, listId?: string) => void
   allTasks?: Task[]
 }
 
@@ -170,7 +170,7 @@ export function TimerView({ taskLists, mini, onToggleMini, onToggleComplete }: T
 
   const handleMarkComplete = () => {
     if (selectedTaskId && onToggleComplete) {
-      onToggleComplete(selectedTaskId, true)
+      onToggleComplete(selectedTaskId, true, selectedListId || undefined)
     }
     setShowCompletionPrompt(false)
     handleStop()
