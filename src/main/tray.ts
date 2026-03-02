@@ -7,15 +7,17 @@ let tray: Tray | null = null
 
 export function createTray(): Tray {
   const iconPath = is.dev
-    ? join(__dirname, '../../resources/tray-icon.ico')
-    : join(process.resourcesPath, 'tray-icon.ico')
+    ? join(__dirname, '../../resources/tray-icon.png')
+    : join(process.resourcesPath, 'tray-icon.png')
 
-  // Create a fallback icon if the file doesn't load
   let icon: Electron.NativeImage
   try {
     icon = nativeImage.createFromPath(iconPath)
     if (icon.isEmpty()) {
       icon = createFallbackIcon()
+    } else {
+      // Resize to appropriate tray size (16x16 on most platforms)
+      icon = icon.resize({ width: 16, height: 16 })
     }
   } catch {
     icon = createFallbackIcon()

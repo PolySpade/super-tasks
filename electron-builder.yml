@@ -42,8 +42,8 @@ linux:
 asar: true
 
 extraResources:
-  - from: resources/tray-icon.ico
-    to: tray-icon.ico
+  - from: resources/tray-icon.png
+    to: tray-icon.png
   - from: resources/icon.ico
     to: icon.ico
 

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { LogOut, Check, X, Loader2 } from 'lucide-react'
 import { PlannerSettings, PomodoroConfig } from '../types'
 import { NudgeSettings } from './NudgeSettings'
@@ -129,6 +129,44 @@ export function SettingsPanel({ onSignOut }: SettingsPanelProps) {
       setKeyError(validateResult.error || 'Invalid API key')
     }
   }
+
+  const [capturingHotkey, setCapturingHotkey] = useState(false)
+
+  const handleHotkeyKeyDown = useCallback((e: React.KeyboardEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+
+    // Ignore standalone modifier presses
+    const ignoredKeys = ['Control', 'Shift', 'Alt', 'Meta']
+    if (ignoredKeys.includes(e.key)) return
+
+    const parts: string[] = []
+    if (e.ctrlKey) parts.push('Ctrl')
+    if (e.altKey) parts.push('Alt')
+    if (e.shiftKey) parts.push('Shift')
+    if (e.metaKey) parts.push('Super')
+
+    // Must have at least one modifier
+    if (parts.length === 0) return
+
+    // Map key to Electron accelerator name
+    let key = e.key
+    if (key === ' ') key = 'Space'
+    else if (key.length === 1) key = key.toUpperCase()
+    else if (key === 'ArrowUp') key = 'Up'
+    else if (key === 'ArrowDown') key = 'Down'
+    else if (key === 'ArrowLeft') key = 'Left'
+    else if (key === 'ArrowRight') key = 'Right'
+    else if (key === 'Escape') { setCapturingHotkey(false); return }
+
+    parts.push(key)
+    const accelerator = parts.join('+')
+
+    setSettings((prev) => ({ ...prev, quickCaptureHotkey: accelerator }))
+    saveSetting({ quickCaptureHotkey: accelerator })
+    setCapturingHotkey(false)
+    ;(e.target as HTMLElement).blur()
+  }, [])
 
   const savePersonaField = (field: string, value: string) => {
     window.api.setPersona({ [field]: value })
@@ -459,12 +497,12 @@ export function SettingsPanel({ onSignOut }: SettingsPanelProps) {
         <input
           type="text"
           className="settings-input"
-          style={{ width: 160 }}
-          value={settings.quickCaptureHotkey}
-          onChange={(e) => {
-            setSettings((prev) => ({ ...prev, quickCaptureHotkey: e.target.value }))
-          }}
-          onBlur={() => saveSetting({ quickCaptureHotkey: settings.quickCaptureHotkey })}
+          style={{ width: 160, cursor: 'pointer', caretColor: 'transparent' }}
+          readOnly
+          value={capturingHotkey ? 'Press shortcut...' : settings.quickCaptureHotkey}
+          onFocus={() => setCapturingHotkey(true)}
+          onBlur={() => setCapturingHotkey(false)}
+          onKeyDown={handleHotkeyKeyDown}
         />
       </div>
 
@@ -506,17 +544,6 @@ export function SettingsPanel({ onSignOut }: SettingsPanelProps) {
         </label>
       </div>
 
-      <div className="settings-item">
-        <span>Launch at startup</span>
-        <label className="toggle">
-          <input
-            type="checkbox"
-            checked={startupEnabled}
-            onChange={handleStartupToggle}
-          />
-          <span className="toggle-slider" />
-        </label>
-      </div>
       <div className="settings-divider" />
       <button className="sign-out-btn" onClick={onSignOut}>
         <LogOut size={14} />

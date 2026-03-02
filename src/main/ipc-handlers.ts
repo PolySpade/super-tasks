@@ -37,6 +37,7 @@ import {
   setHabitInstance
 } from './habit-store'
 import { hideWindow, toggleCalendarWindow, setAlwaysOnTop, getAlwaysOnTop, setWindowSize, getWindowSize } from './window'
+import { registerQuickCaptureHotkey } from './quick-capture-hotkey'
 import {
   logSession,
   getTodaySessions,
@@ -253,6 +254,9 @@ export function registerIpcHandlers(): void {
   ipcMain.handle('settings:set-planner', (_event, partial: any) => {
     try {
       const settings = updateSettings(partial)
+      if (partial.quickCaptureHotkey) {
+        registerQuickCaptureHotkey(partial.quickCaptureHotkey)
+      }
       return { success: true, data: settings }
     } catch (error: any) {
       return { success: false, error: error.message }

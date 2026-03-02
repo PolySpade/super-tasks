@@ -8,6 +8,7 @@ import { createTray, getTray } from './tray'
 import { registerIpcHandlers } from './ipc-handlers'
 import { restoreSession } from './google-auth'
 import { showCaptureWindow } from './quick-capture-window'
+import { registerQuickCaptureHotkey } from './quick-capture-hotkey'
 import { startHabitScheduler, stopHabitScheduler } from './habit-scheduler'
 import { startNudgeEngine, stopNudgeEngine } from './nudge-engine'
 import { initDriveSync, stopPeriodicSync } from './drive-sync-init'
@@ -19,7 +20,11 @@ const gotTheLock = app.requestSingleInstanceLock()
 if (!gotTheLock) {
   app.quit()
 } else {
-  app.on('second-instance', () => {
+  app.on('second-instance', (_event, argv) => {
+    if (argv.includes('--quick-capture')) {
+      showCaptureWindow()
+      return
+    }
     const win = getWindow()
     const tray = getTray()
     if (win && tray) {
@@ -50,13 +55,7 @@ if (!gotTheLock) {
     const captureStore = new Store({ name: 'planner-settings' })
     const savedSettings = captureStore.get('settings') as any
     const hotkey = savedSettings?.quickCaptureHotkey || 'Ctrl+Shift+Space'
-    try {
-      globalShortcut.register(hotkey, () => {
-        showCaptureWindow()
-      })
-    } catch {
-      // Hotkey registration failed — silently ignore
-    }
+    registerQuickCaptureHotkey(hotkey)
 
     // Auto-restore session
     await restoreSession()
@@ -70,9 +69,12 @@ if (!gotTheLock) {
     // Start nudge engine
     startNudgeEngine()
 
-    // Show window unless launched with --hidden
+    // Show window unless launched with --hidden or --quick-capture
     const launchedHidden = process.argv.includes('--hidden')
-    if (!launchedHidden) {
+    const launchedCapture = process.argv.includes('--quick-capture')
+    if (launchedCapture) {
+      showCaptureWindow()
+    } else if (!launchedHidden) {
       const tray = getTray()
       if (tray) {
         toggleWindow(tray.getBounds())
@@ -107,3 +109,4 @@ if (!gotTheLock) {
     // Do nothing - keep app running in tray
   })
 }
+

@@ -14,6 +14,8 @@ export function createCaptureWindow(): BrowserWindow {
   const primaryDisplay = screen.getPrimaryDisplay()
   const { width: screenWidth, height: screenHeight } = primaryDisplay.workAreaSize
 
+  const isLinux = process.platform === 'linux'
+
   captureWindow = new BrowserWindow({
     width: 524,
     height: 88,
@@ -25,9 +27,10 @@ export function createCaptureWindow(): BrowserWindow {
     maxHeight: 424,
     skipTaskbar: true,
     alwaysOnTop: true,
-    transparent: true,
-    backgroundColor: '#00000000',
-    hasShadow: false,
+    transparent: !isLinux,
+    backgroundColor: isLinux ? '#1a1a2e' : '#00000000',
+    hasShadow: !isLinux,
+    ...(isLinux ? { type: 'toolbar' as const } : {}),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: false
@@ -58,6 +61,7 @@ export function createCaptureWindow(): BrowserWindow {
 }
 
 export function showCaptureWindow(): void {
+  console.log('[quick-capture] showCaptureWindow called, existing:', !!captureWindow && !captureWindow?.isDestroyed())
   if (captureWindow && !captureWindow.isDestroyed()) {
     captureWindow.show()
     captureWindow.focus()
