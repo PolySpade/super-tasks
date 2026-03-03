@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { RefreshCw, Minimize2, Plus, Trash2, X } from 'lucide-react'
+import { RefreshCw, Minimize2, Plus, Trash2, X, Grid2x2 } from 'lucide-react'
 import { TaskList } from '../types'
 
 interface TaskListSelectorProps {
@@ -10,6 +10,7 @@ interface TaskListSelectorProps {
   taskCount: { total: number; completed: number }
   isOffline?: boolean
   onMinimize?: () => void
+  onToggleGrid?: () => void
   onCreateList?: (title: string) => Promise<void>
   onDeleteList?: (listId: string) => Promise<void>
 }
@@ -22,6 +23,7 @@ export function TaskListSelector({
   taskCount,
   isOffline,
   onMinimize,
+  onToggleGrid,
   onCreateList,
   onDeleteList
 }: TaskListSelectorProps) {
@@ -118,6 +120,11 @@ export function TaskListSelector({
         <button className="icon-btn" onClick={handleRefresh} title="Refresh">
           <RefreshCw size={14} />
         </button>
+        {onToggleGrid && (
+          <button className="icon-btn" onClick={onToggleGrid} title="All boards">
+            <Grid2x2 size={14} />
+          </button>
+        )}
         {onMinimize && (
           <button className="icon-btn" onClick={onMinimize} title="Compact view">
             <Minimize2 size={14} />

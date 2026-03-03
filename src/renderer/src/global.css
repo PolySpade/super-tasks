@@ -6428,3 +6428,109 @@ body:has(.quick-capture-wrapper) {
 .app-mini-tasks .add-task-extras {
   padding: 4px 8px 0;
 }
+
+/* All Boards Grid View */
+.all-boards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px;
+  padding: 10px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.board-column {
+  background: var(--bg-secondary);
+  border-radius: 8px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: calc(100vh - 100px);
+  overflow-y: auto;
+  border: 2px solid transparent;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.board-column-drop-target {
+  border-color: var(--accent);
+  background: rgba(91, 138, 255, 0.06);
+}
+
+.board-column-header {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 6px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: var(--text-secondary);
+}
+
+.board-column-count {
+  background: var(--bg-tertiary);
+  border-radius: 10px;
+  padding: 0 6px;
+  font-size: 10px;
+}
+
+.board-column-empty {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  padding: 8px 6px;
+  text-align: center;
+}
+
+.board-task {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 5px 6px;
+  border-radius: 5px;
+  cursor: grab;
+  font-size: 12px;
+  transition: opacity 0.15s, background 0.15s;
+}
+
+.board-task:hover {
+  background: var(--bg-hover);
+}
+
+.board-task:active {
+  cursor: grabbing;
+}
+
+.board-task.dragging {
+  opacity: 0.3;
+}
+
+.board-task-moving {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.board-task-title {
+  flex: 1;
+  line-height: 1.3;
+  cursor: pointer;
+}
+
+.board-task-due {
+  font-size: 10px;
+  white-space: nowrap;
+  margin-top: 1px;
+}
+
+.grid-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.grid-header-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}

@@ -19,13 +19,14 @@ import { FocusMode } from './components/FocusMode'
 import { CalendarView } from './components/CalendarView'
 import { TimerView } from './components/TimerView'
 import { WeeklyReview } from './components/WeeklyReview'
+import { AllBoardsGrid } from './components/AllBoardsGrid'
 import { QuickCaptureInput } from './components/QuickCaptureInput'
 import { EODReview } from './components/EODReview'
 import { PersonaSetupModal } from './components/PersonaSetupModal'
 import { useEODReview } from './hooks/useEODReview'
 import { DailyRitual } from './components/DailyRitual'
 import { useDailyRitual } from './hooks/useDailyRitual'
-import { LayoutDashboard, ListTodo, CalendarDays, CalendarClock, Timer, Minimize2, Maximize2 } from 'lucide-react'
+import { LayoutDashboard, ListTodo, CalendarDays, CalendarClock, Timer, Minimize2, Maximize2, Grid2x2 } from 'lucide-react'
 
 type Tab = 'dashboard' | 'tasks' | 'calendar' | 'plan' | 'timer'
 type View = 'dashboard' | 'tasks' | 'settings' | 'detail' | 'plan' | 'calendar' | 'deadlines' | 'timer' | 'weekly-review'
@@ -82,6 +83,7 @@ function TrayApp() {
   const [focusTimeBox, setFocusTimeBox] = useState<number | undefined>()
   const [miniTimer, setMiniTimer] = useState(false)
   const [miniTasks, setMiniTasks] = useState(false)
+  const [gridView, setGridView] = useState(false)
   const [dashboardKey, setDashboardKey] = useState(0)
 
   const [pendingOffline, setPendingOffline] = useState(0)
@@ -312,6 +314,28 @@ function TrayApp() {
     }
   }
 
+  const handleToggleGridView = async () => {
+    if (gridView) {
+      await window.api.setWindowSize(440, 520)
+      setGridView(false)
+    } else {
+      await window.api.setWindowSize(960, 600)
+      setGridView(true)
+    }
+  }
+
+  const handleGridSelectTask = (task: Task, listId: string) => {
+    setSelectedListId(listId)
+    window.api.setWindowSize(440, 520)
+    setGridView(false)
+    setSelectedTask(task)
+    setView('detail')
+  }
+
+  const handleGridToggle = (taskId: string, completed: boolean, listId: string) => {
+    toggleComplete(taskId, completed, listId)
+  }
+
   const handleToggleMIT = (taskId: string) => {
     if (isMIT(taskId)) {
       removeMIT(taskId)
@@ -500,6 +524,14 @@ function TrayApp() {
             />
           )}
         </>
+      ) : gridView ? (
+        <AllBoardsGrid
+          signedIn={signedIn}
+          taskLists={taskLists}
+          onSelectTask={handleGridSelectTask}
+          onToggle={handleGridToggle}
+          onExit={handleToggleGridView}
+        />
       ) : (
         <>
           {authLoading ? (
@@ -518,6 +550,7 @@ function TrayApp() {
                 taskCount={taskCount}
                 isOffline={isOffline}
                 onMinimize={handleToggleMiniTasks}
+                onToggleGrid={handleToggleGridView}
                 onCreateList={handleCreateList}
                 onDeleteList={handleDeleteList}
               />
