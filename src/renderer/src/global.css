@@ -3678,6 +3678,13 @@ body {
   color: var(--success);
 }
 
+.ai-sort-reason {
+  font-size: 10px;
+  color: var(--text-tertiary);
+  margin-top: 2px;
+  font-style: italic;
+}
+
 .ai-rename-preview {
   flex: 1;
   overflow-y: auto;

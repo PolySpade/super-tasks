@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import { Calendar, Sparkles, Plus, Wand2, ClipboardList, Zap, Sun, Sunset } from 'lucide-react'
+import { Calendar, Sparkles, Plus, Wand2, ArrowLeftRight, ClipboardList, Zap, Sun, Sunset } from 'lucide-react'
 import { Task, TaskList, EnergyLevel, TaskMetadata } from '../types'
 import { useDashboardData } from '../hooks/useDashboardData'
 import { useDeadlines } from '../hooks/useDeadlines'
@@ -9,6 +9,7 @@ import { RecentActivity } from './RecentActivity'
 import { DeadlinePreview } from './DeadlinePreview'
 import { QuickAddModal } from './QuickAddModal'
 import { AIRenameModal } from './AIRenameModal'
+import { AIListSortModal } from './AIListSortModal'
 import { MITSection } from './MITSection'
 import { EnergyBadge } from './EnergyBadge'
 import { HabitSection } from './HabitSection'
@@ -63,6 +64,7 @@ export function Dashboard({
 
   const [showQuickAdd, setShowQuickAdd] = useState(false)
   const [showRename, setShowRename] = useState(false)
+  const [showSort, setShowSort] = useState(false)
 
   const today = new Date()
   const dateStr = today.toLocaleDateString('en-US', {
@@ -112,6 +114,10 @@ export function Dashboard({
           <button className="dashboard-action-btn" onClick={() => setShowRename(true)}>
             <Wand2 size={14} />
             AI Rename
+          </button>
+          <button className="dashboard-action-btn" onClick={() => setShowSort(true)}>
+            <ArrowLeftRight size={14} />
+            AI Sort
           </button>
           {onStartEODReview && (
             <button className="dashboard-action-btn" onClick={onStartEODReview}>
@@ -196,6 +202,14 @@ export function Dashboard({
         <AIRenameModal
           taskLists={taskLists}
           onClose={() => setShowRename(false)}
+          onApplied={refresh}
+        />
+      )}
+
+      {showSort && (
+        <AIListSortModal
+          taskLists={taskLists}
+          onClose={() => setShowSort(false)}
           onApplied={refresh}
         />
       )}

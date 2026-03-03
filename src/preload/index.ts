@@ -67,6 +67,10 @@ const api = {
   aiRenameTasks: (tasks: { id: string; title: string; notes?: string; listName?: string; due?: string; energyLevel?: string; parentTitle?: string; hasSubtasks?: boolean }[]) =>
     ipcRenderer.invoke('tasks:ai-rename', tasks),
 
+  // AI sort to lists
+  aiSortToLists: (tasks: any[], lists: any[]) =>
+    ipcRenderer.invoke('tasks:ai-sort-lists', tasks, lists),
+
   // AI subtask generation
   generateSubtasks: (request: { taskTitle: string; taskNotes?: string; deadline: string }) =>
     ipcRenderer.invoke('planner:generate-subtasks', request),

@@ -608,6 +608,80 @@ export async function renameTasks(request: {
   }))
 }
 
+// ═══════════════════════════════════════
+// AI Sort Tasks to Lists
+// ═══════════════════════════════════════
+
+interface SortTask {
+  id: string
+  title: string
+  notes?: string
+  due?: string
+  currentListId: string
+  currentListName: string
+}
+
+function buildSortSystemPrompt(lists: { id: string; title: string }[]): string {
+  const personaBlock = buildFullPersonaBlock()
+  const listDescriptions = lists.map((l) => `- "${l.title}" (id: ${l.id})`).join('\n')
+
+  return `You are a task organization AI that understands the user and identifies tasks that are in the wrong list.
+
+## Who you are helping
+${personaBlock}
+
+## Available lists
+${listDescriptions}
+
+## Rules
+- Only propose moves for tasks that are clearly in the wrong list
+- Use list names as semantic categories to determine where tasks belong
+- Provide a brief reason for each proposed move
+- If a task is already in the correct list, do NOT include it
+- Consider the user's domain, role, and how they likely organize work
+- When in doubt, leave the task where it is — only move when confident
+- Return ONLY valid JSON, no markdown fences or extra text
+
+Return JSON in this exact format:
+{
+  "moves": [
+    { "taskId": "id-here", "targetListId": "list-id-here", "reason": "Brief reason for moving" }
+  ]
+}`
+}
+
+function buildSortPrompt(tasks: SortTask[]): string {
+  const tasksList = tasks
+    .map((t) => {
+      let desc = `- [${t.id}] [list: ${t.currentListName}]`
+      desc += ` Title: "${t.title}"`
+      if (t.due) desc += ` (due: ${t.due})`
+      if (t.notes) desc += ` | Notes: "${t.notes}"`
+      return desc
+    })
+    .join('\n')
+
+  return `Analyze these tasks and identify any that are in the wrong list. Only propose moves for tasks that clearly belong in a different list:\n\n${tasksList}\n\nReturn JSON only.`
+}
+
+export async function sortTasksToLists(request: {
+  tasks: SortTask[]
+  lists: { id: string; title: string }[]
+}): Promise<{ taskId: string; targetListId: string; reason: string }[]> {
+  const prompt = buildSortPrompt(request.tasks)
+  const responseText = await callAiWithPrompt(buildSortSystemPrompt(request.lists), prompt)
+  let cleaned = responseText.trim()
+  if (cleaned.startsWith('```')) {
+    cleaned = cleaned.replace(/^```(?:json)?\s*/, '').replace(/```\s*$/, '')
+  }
+  const data = JSON.parse(cleaned)
+  return (data.moves || []).map((m: any) => ({
+    taskId: m.taskId || '',
+    targetListId: m.targetListId || '',
+    reason: m.reason || ''
+  }))
+}
+
 export async function generatePlan(request: PlanRequest): Promise<DayPlan> {
   const settings = getSettings()
   const prompt = buildPrompt(request)

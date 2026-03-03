@@ -14,7 +14,7 @@ import { getPendingQueue } from './offline-queue'
 import { getCalendars, getEvents, createEvent, updateEvent, deleteEvent } from './google-calendar-api'
 import { getSettings, updateSettings } from './settings-store'
 import { getPersona, setPersona, isPersonaConfigured } from './persona-store'
-import { generatePlan, validateApiKey, generateSubtasks, workBackwards, renameTasks, listOllamaModels } from './ai-planner'
+import { generatePlan, validateApiKey, generateSubtasks, workBackwards, renameTasks, sortTasksToLists, listOllamaModels } from './ai-planner'
 import { getStartupEnabled, setStartupEnabled } from './startup'
 import { appendMetaTag } from './task-meta-utils'
 import { getMITs, setMITs, clearMITs } from './mit-store'
@@ -399,6 +399,16 @@ export function registerIpcHandlers(): void {
   ipcMain.handle('tasks:ai-rename', async (_event, tasks: any[]) => {
     try {
       const result = await renameTasks({ tasks })
+      return { success: true, data: result }
+    } catch (error: any) {
+      return { success: false, error: error.message }
+    }
+  })
+
+  // AI Sort to Lists
+  ipcMain.handle('tasks:ai-sort-lists', async (_event, tasks: any[], lists: any[]) => {
+    try {
+      const result = await sortTasksToLists({ tasks, lists })
       return { success: true, data: result }
     } catch (error: any) {
       return { success: false, error: error.message }
