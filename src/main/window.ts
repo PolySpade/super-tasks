@@ -1,6 +1,6 @@
-import { BrowserWindow, nativeImage, screen } from 'electron'
-import { join } from 'path'
-import { is } from '@electron-toolkit/utils'
+import { BrowserWindow, nativeImage, screen } from "electron";
+import { join } from "path";
+import { is } from "@electron-toolkit/utils";
 
 function getAppIcon(): Electron.NativeImage {
   const iconPath = is.dev
@@ -9,13 +9,13 @@ function getAppIcon(): Electron.NativeImage {
   return nativeImage.createFromPath(iconPath)
 }
 
-let mainWindow: BrowserWindow | null = null
-let calendarWindow: BrowserWindow | null = null
-let alwaysOnTopEnabled = true
-let isQuitting = false
+let mainWindow: BrowserWindow | null = null;
+let calendarWindow: BrowserWindow | null = null;
+let alwaysOnTopEnabled = true;
+let isQuitting = false;
 
 export function setQuitting(value: boolean): void {
-  isQuitting = value
+  isQuitting = value;
 }
 
 export function createWindow(): BrowserWindow {
@@ -28,75 +28,77 @@ export function createWindow(): BrowserWindow {
     skipTaskbar: false,
     alwaysOnTop: alwaysOnTopEnabled,
     transparent: false,
-    backgroundColor: '#1e1e1e',
+    backgroundColor: "#1e1e1e",
     icon: getAppIcon(),
     webPreferences: {
-      preload: join(__dirname, '../preload/index.js'),
-      sandbox: false
-    }
-  })
+      preload: join(__dirname, "../preload/index.js"),
+      sandbox: false,
+    },
+  });
 
   // Hide to tray on close instead of quitting (unless app is actually quitting)
-  mainWindow.on('close', (e) => {
+  mainWindow.on("close", (e) => {
     if (!isQuitting && mainWindow && !mainWindow.isDestroyed()) {
-      e.preventDefault()
-      mainWindow.hide()
+      e.preventDefault();
+      mainWindow.hide();
     }
-  })
+  });
 
-  if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
-    mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
+  if (is.dev && process.env["ELECTRON_RENDERER_URL"]) {
+    mainWindow.loadURL(process.env["ELECTRON_RENDERER_URL"]);
   } else {
-    mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
+    mainWindow.loadFile(join(__dirname, "../renderer/index.html"));
   }
 
-  return mainWindow
+  return mainWindow;
 }
 
 export function toggleWindow(trayBounds: Electron.Rectangle): void {
-  if (!mainWindow) return
+  if (!mainWindow) return;
 
   if (mainWindow.isVisible()) {
-    mainWindow.hide()
-    return
+    mainWindow.hide();
+    return;
   }
 
-  const { x, y } = calculatePosition(trayBounds)
-  mainWindow.setPosition(x, y, false)
-  mainWindow.show()
-  mainWindow.focus()
-  mainWindow.webContents.send('window:shown')
+  const { x, y } = calculatePosition(trayBounds);
+  mainWindow.setPosition(x, y, false);
+  mainWindow.show();
+  mainWindow.focus();
+  mainWindow.webContents.send("window:shown");
 }
 
 function calculatePosition(trayBounds: Electron.Rectangle) {
-  const windowBounds = mainWindow!.getBounds()
+  const windowBounds = mainWindow!.getBounds();
   const display = screen.getDisplayNearestPoint({
     x: trayBounds.x,
-    y: trayBounds.y
-  })
-  const workArea = display.workArea
+    y: trayBounds.y,
+  });
+  const workArea = display.workArea;
 
-  let x = Math.round(trayBounds.x + trayBounds.width / 2 - windowBounds.width / 2)
-  let y = Math.round(trayBounds.y - windowBounds.height - 4)
+  let x = Math.round(
+    trayBounds.x + trayBounds.width / 2 - windowBounds.width / 2,
+  );
+  let y = Math.round(trayBounds.y - windowBounds.height - 4);
 
   // Keep within screen bounds
-  if (x < workArea.x) x = workArea.x
+  if (x < workArea.x) x = workArea.x;
   if (x + windowBounds.width > workArea.x + workArea.width) {
-    x = workArea.x + workArea.width - windowBounds.width
+    x = workArea.x + workArea.width - windowBounds.width;
   }
   if (y < workArea.y) {
-    y = trayBounds.y + trayBounds.height + 4
+    y = trayBounds.y + trayBounds.height + 4;
   }
 
-  return { x, y }
+  return { x, y };
 }
 
 export function getWindow(): BrowserWindow | null {
-  return mainWindow
+  return mainWindow;
 }
 
 export function hideWindow(): void {
-  mainWindow?.hide()
+  mainWindow?.hide();
 }
 
 export function createCalendarWindow(): BrowserWindow {
@@ -108,68 +110,70 @@ export function createCalendarWindow(): BrowserWindow {
     resizable: true,
     skipTaskbar: false,
     alwaysOnTop: false,
-    backgroundColor: '#1e1e1e',
-    title: 'Calendar',
+    backgroundColor: "#1e1e1e",
+    title: "Calendar",
     icon: getAppIcon(),
     webPreferences: {
-      preload: join(__dirname, '../preload/index.js'),
-      sandbox: false
-    }
-  })
+      preload: join(__dirname, "../preload/index.js"),
+      sandbox: false,
+    },
+  });
 
-  const query = '?view=calendar'
-  if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
-    calendarWindow.loadURL(process.env['ELECTRON_RENDERER_URL'] + query)
+  const query = "?view=calendar";
+  if (is.dev && process.env["ELECTRON_RENDERER_URL"]) {
+    calendarWindow.loadURL(process.env["ELECTRON_RENDERER_URL"] + query);
   } else {
-    calendarWindow.loadFile(join(__dirname, '../renderer/index.html'), { search: query })
+    calendarWindow.loadFile(join(__dirname, "../renderer/index.html"), {
+      search: query,
+    });
   }
 
-  calendarWindow.on('closed', () => {
-    calendarWindow = null
-  })
+  calendarWindow.on("closed", () => {
+    calendarWindow = null;
+  });
 
-  calendarWindow.once('ready-to-show', () => {
-    calendarWindow?.show()
-  })
+  calendarWindow.once("ready-to-show", () => {
+    calendarWindow?.show();
+  });
 
-  return calendarWindow
+  return calendarWindow;
 }
 
 export function getCalendarWindow(): BrowserWindow | null {
-  return calendarWindow
+  return calendarWindow;
 }
 
 export function toggleCalendarWindow(): void {
   if (calendarWindow && !calendarWindow.isDestroyed()) {
-    calendarWindow.focus()
+    calendarWindow.focus();
   } else {
-    createCalendarWindow()
+    createCalendarWindow();
   }
 }
 
 export function setWindowSize(width: number, height: number): void {
   if (mainWindow && !mainWindow.isDestroyed()) {
-    mainWindow.setResizable(true)
-    mainWindow.setSize(width, height, true)
-    mainWindow.setResizable(false)
+    mainWindow.setResizable(true);
+    mainWindow.setSize(width, height, true);
+    mainWindow.setResizable(false);
   }
 }
 
 export function getWindowSize(): { width: number; height: number } {
   if (mainWindow && !mainWindow.isDestroyed()) {
-    const [width, height] = mainWindow.getSize()
-    return { width, height }
+    const [width, height] = mainWindow.getSize();
+    return { width, height };
   }
-  return { width: 440, height: 520 }
+  return { width: 440, height: 520 };
 }
 
 export function setAlwaysOnTop(enabled: boolean): void {
-  alwaysOnTopEnabled = enabled
+  alwaysOnTopEnabled = enabled;
   if (mainWindow && !mainWindow.isDestroyed()) {
-    mainWindow.setAlwaysOnTop(enabled)
+    mainWindow.setAlwaysOnTop(enabled);
   }
 }
 
 export function getAlwaysOnTop(): boolean {
-  return alwaysOnTopEnabled
+  return alwaysOnTopEnabled;
 }
