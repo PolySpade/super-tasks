@@ -200,13 +200,43 @@ ${historicalNote}${reviewContext}
 Create an optimal, personalized schedule. Return JSON only.`
 }
 
-function parseAiResponse(text: string): DayPlan {
+function extractJson(text: string): any {
   let cleaned = text.trim()
-  // Strip markdown fences if present
-  if (cleaned.startsWith('```')) {
-    cleaned = cleaned.replace(/^```(?:json)?\s*/, '').replace(/```\s*$/, '')
+
+  // Strip <think>...</think> blocks (common in reasoning models like Qwen3)
+  cleaned = cleaned.replace(/<think>[\s\S]*?<\/think>/gi, '').trim()
+
+  // Try to extract from markdown code fences (case-insensitive, anywhere in text)
+  const fenceMatch = cleaned.match(/```(?:json)?\s*\n?([\s\S]*?)```/i)
+  if (fenceMatch) {
+    cleaned = fenceMatch[1].trim()
   }
-  const parsed = JSON.parse(cleaned)
+
+  // Try JSON.parse directly first (handles clean responses)
+  try {
+    return JSON.parse(cleaned)
+  } catch {
+    // continue to brace-matching fallback
+  }
+
+  // Find the first '{' and last matching '}' to extract JSON object
+  const firstBrace = cleaned.indexOf('{')
+  const lastBrace = cleaned.lastIndexOf('}')
+  if (firstBrace !== -1 && lastBrace > firstBrace) {
+    const candidate = cleaned.substring(firstBrace, lastBrace + 1)
+    try {
+      return JSON.parse(candidate)
+    } catch {
+      // fall through to error
+    }
+  }
+
+  const snippet = text.length > 200 ? text.substring(0, 200) + '...' : text
+  throw new Error(`Failed to parse AI response as JSON. Received: ${snippet}`)
+}
+
+function parseAiResponse(text: string): DayPlan {
+  const parsed = extractJson(text)
   if (!parsed.blocks || !Array.isArray(parsed.blocks)) {
     throw new Error('Invalid AI response: missing blocks array')
   }
@@ -282,6 +312,7 @@ async function callOllama(baseUrl: string, model: string, prompt: string, system
   const openai = new OpenAI({ baseURL: `${baseUrl}/v1`, apiKey: 'ollama' })
   const response = await openai.chat.completions.create({
     model,
+    response_format: { type: 'json_object' },
     messages: [
       { role: 'system', content: systemPrompt || buildPlannerSystemPrompt() },
       { role: 'user', content: prompt }
@@ -482,13 +513,7 @@ async function callAiWithPrompt(systemPrompt: string, userPrompt: string): Promi
 export async function generateSubtasks(request: SubtaskRequest): Promise<{ subtasks: { title: string; estimatedMinutes: number }[] }> {
   const prompt = buildSubtaskPrompt(request)
   const responseText = await callAiWithPrompt(buildSubtaskSystemPrompt(), prompt)
-  const parsed = parseAiResponse(responseText)
-  // parseAiResponse returns DayPlan shape, but we need subtask shape — re-parse
-  let cleaned = responseText.trim()
-  if (cleaned.startsWith('```')) {
-    cleaned = cleaned.replace(/^```(?:json)?\s*/, '').replace(/```\s*$/, '')
-  }
-  const data = JSON.parse(cleaned)
+  const data = extractJson(responseText)
   return {
     subtasks: (data.subtasks || []).map((s: any) => ({
       title: s.title || '',
@@ -500,11 +525,7 @@ export async function generateSubtasks(request: SubtaskRequest): Promise<{ subta
 export async function workBackwards(request: WorkBackwardsRequest): Promise<{ subtasks: { title: string; estimatedMinutes: number }[]; schedule: { subtaskTitle: string; date: string; start: string; end: string }[] }> {
   const prompt = buildWorkBackwardsPrompt(request)
   const responseText = await callAiWithPrompt(buildWorkBackwardsSystemPrompt(), prompt)
-  let cleaned = responseText.trim()
-  if (cleaned.startsWith('```')) {
-    cleaned = cleaned.replace(/^```(?:json)?\s*/, '').replace(/```\s*$/, '')
-  }
-  const data = JSON.parse(cleaned)
+  const data = extractJson(responseText)
   return {
     subtasks: (data.subtasks || []).map((s: any) => ({
       title: s.title || '',
@@ -596,11 +617,7 @@ export async function renameTasks(request: {
 }): Promise<{ taskId: string; newTitle: string; newNotes: string }[]> {
   const prompt = buildRenamePrompt(request.tasks)
   const responseText = await callAiWithPrompt(buildRenameSystemPrompt(), prompt)
-  let cleaned = responseText.trim()
-  if (cleaned.startsWith('```')) {
-    cleaned = cleaned.replace(/^```(?:json)?\s*/, '').replace(/```\s*$/, '')
-  }
-  const data = JSON.parse(cleaned)
+  const data = extractJson(responseText)
   return (data.renames || []).map((r: any) => ({
     taskId: r.taskId || '',
     newTitle: r.newTitle || '',
@@ -670,11 +687,7 @@ export async function sortTasksToLists(request: {
 }): Promise<{ taskId: string; targetListId: string; reason: string }[]> {
   const prompt = buildSortPrompt(request.tasks)
   const responseText = await callAiWithPrompt(buildSortSystemPrompt(request.lists), prompt)
-  let cleaned = responseText.trim()
-  if (cleaned.startsWith('```')) {
-    cleaned = cleaned.replace(/^```(?:json)?\s*/, '').replace(/```\s*$/, '')
-  }
-  const data = JSON.parse(cleaned)
+  const data = extractJson(responseText)
   return (data.moves || []).map((m: any) => ({
     taskId: m.taskId || '',
     targetListId: m.targetListId || '',
