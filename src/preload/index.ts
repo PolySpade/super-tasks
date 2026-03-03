@@ -35,9 +35,10 @@ const api = {
     ipcRenderer.invoke('calendar:delete-event', calendarId, eventId),
 
   // AI Planner
-  validateApiKey: (provider: string, apiKey: string) =>
-    ipcRenderer.invoke('planner:validate-key', provider, apiKey),
+  validateApiKey: (provider: string, apiKey: string, ollamaBaseUrl?: string) =>
+    ipcRenderer.invoke('planner:validate-key', provider, apiKey, ollamaBaseUrl),
   generatePlan: (request: any) => ipcRenderer.invoke('planner:generate', request),
+  listOllamaModels: (baseUrl: string) => ipcRenderer.invoke('planner:list-ollama-models', baseUrl),
 
   // Planner Settings
   getPlannerSettings: () => ipcRenderer.invoke('settings:get-planner'),

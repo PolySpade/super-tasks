@@ -39,7 +39,9 @@ export function PlanView({ signedIn, taskLists, onOpenSettings, mits }: PlanView
     }
   }, [taskLists])
 
-  const hasApiKey = settings?.aiApiKey && settings.aiApiKey !== ''
+  const hasAiConfigured = settings?.aiProvider === 'ollama'
+    ? !!(settings.ollamaModel)
+    : !!(settings?.aiApiKey && settings.aiApiKey !== '')
 
   // Map context block names to colors
   const getBlockColor = (blockName: string): string => {
@@ -131,14 +133,16 @@ export function PlanView({ signedIn, taskLists, onOpenSettings, mits }: PlanView
   })
 
   // No API key configured
-  if (settings && !hasApiKey) {
+  if (settings && !hasAiConfigured) {
     return (
       <div className="plan-view">
         <div className="plan-setup-card">
           <AlertCircle size={28} className="plan-setup-icon" />
           <p className="plan-setup-title">AI Planner Setup</p>
           <p className="plan-setup-text">
-            Add your AI API key in Settings to start planning your day, or build a plan manually.
+            {settings.aiProvider === 'ollama'
+              ? 'Select an Ollama model in Settings to start planning your day, or build a plan manually.'
+              : 'Add your AI API key in Settings to start planning your day, or build a plan manually.'}
           </p>
           <button className="plan-setup-btn" onClick={onOpenSettings}>
             <Settings size={14} />

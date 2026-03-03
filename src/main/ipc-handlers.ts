@@ -14,7 +14,7 @@ import { getPendingQueue } from './offline-queue'
 import { getCalendars, getEvents, createEvent, updateEvent, deleteEvent } from './google-calendar-api'
 import { getSettings, updateSettings } from './settings-store'
 import { getPersona, setPersona, isPersonaConfigured } from './persona-store'
-import { generatePlan, validateApiKey, generateSubtasks, workBackwards, renameTasks } from './ai-planner'
+import { generatePlan, validateApiKey, generateSubtasks, workBackwards, renameTasks, listOllamaModels } from './ai-planner'
 import { getStartupEnabled, setStartupEnabled } from './startup'
 import { appendMetaTag } from './task-meta-utils'
 import { getMITs, setMITs, clearMITs } from './mit-store'
@@ -221,13 +221,25 @@ export function registerIpcHandlers(): void {
   // AI Planner
   ipcMain.handle(
     'planner:validate-key',
-    async (_event, provider: 'anthropic' | 'openai' | 'gemini', apiKey: string) => {
+    async (_event, provider: 'anthropic' | 'openai' | 'gemini' | 'ollama', apiKey: string, ollamaBaseUrl?: string) => {
       try {
-        await validateApiKey(provider, apiKey)
+        await validateApiKey(provider, apiKey, ollamaBaseUrl)
         return { success: true }
       } catch (error: any) {
         const msg = error.message || 'Invalid API key'
         return { success: false, error: msg }
+      }
+    }
+  )
+
+  ipcMain.handle(
+    'planner:list-ollama-models',
+    async (_event, baseUrl: string) => {
+      try {
+        const models = await listOllamaModels(baseUrl)
+        return { success: true, data: models }
+      } catch (error: any) {
+        return { success: false, error: error.message }
       }
     }
   )

@@ -1702,6 +1702,41 @@ body {
   overflow-wrap: break-word;
 }
 
+.rename-tags-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.rename-tag-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  font-size: 11px;
+  color: var(--text-primary);
+}
+
+.rename-tag-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 0;
+  border-radius: 50%;
+  transition: color 0.15s;
+}
+
+.rename-tag-remove:hover {
+  color: var(--danger);
+}
+
 .settings-hours-row {
   display: flex;
   align-items: center;

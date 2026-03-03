@@ -2,7 +2,7 @@ import Store from 'electron-store'
 import { safeStorage } from 'electron'
 
 export interface PlannerSettings {
-  aiProvider: 'anthropic' | 'openai' | 'gemini'
+  aiProvider: 'anthropic' | 'openai' | 'gemini' | 'ollama'
   aiApiKey: string
   workingHoursStart: string
   workingHoursEnd: string
@@ -12,6 +12,9 @@ export interface PlannerSettings {
   breakDurationMinutes: number
   quickCaptureHotkey: string
   quickCaptureDefaultListId: string
+  ollamaBaseUrl: string
+  ollamaModel: string
+  renameTags: string[]
 }
 
 const DEFAULTS: PlannerSettings = {
@@ -24,7 +27,10 @@ const DEFAULTS: PlannerSettings = {
   defaultCalendarId: 'primary',
   breakDurationMinutes: 15,
   quickCaptureHotkey: 'Ctrl+Shift+Space',
-  quickCaptureDefaultListId: ''
+  quickCaptureDefaultListId: '',
+  ollamaBaseUrl: 'http://localhost:11434',
+  ollamaModel: '',
+  renameTags: ['Review', 'Write', 'Fix', 'Call', 'Research', 'Design', 'Plan', 'Build', 'Test', 'Ship']
 }
 
 export const store = new Store({ name: 'planner-settings' })

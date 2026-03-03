@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { LogOut, Check, X, Loader2 } from 'lucide-react'
+import { LogOut, Check, X, Loader2, Plus } from 'lucide-react'
 import { PlannerSettings, PomodoroConfig } from '../types'
 import { NudgeSettings } from './NudgeSettings'
 
@@ -22,7 +22,10 @@ export function SettingsPanel({ onSignOut }: SettingsPanelProps) {
     defaultCalendarId: 'primary',
     breakDurationMinutes: 15,
     quickCaptureHotkey: 'Ctrl+Shift+Space',
-    quickCaptureDefaultListId: ''
+    quickCaptureDefaultListId: '',
+    ollamaBaseUrl: 'http://localhost:11434',
+    ollamaModel: '',
+    renameTags: ['Review', 'Write', 'Fix', 'Call', 'Research', 'Design', 'Plan', 'Build', 'Test', 'Ship']
   })
   const [taskLists, setTaskLists] = useState<{ id: string; title: string }[]>([])
   const [apiKeyInput, setApiKeyInput] = useState('')
@@ -37,6 +40,47 @@ export function SettingsPanel({ onSignOut }: SettingsPanelProps) {
     logToCalendar: false
   })
   const [persona, setPersona] = useState({ name: '', role: '', workStyle: '', preferences: '' })
+  const [ollamaModels, setOllamaModels] = useState<string[]>([])
+  const [ollamaModelsLoading, setOllamaModelsLoading] = useState(false)
+  const [ollamaModelsError, setOllamaModelsError] = useState('')
+  const [ollamaConnected, setOllamaConnected] = useState(false)
+
+  const fetchOllamaModels = async (baseUrl: string) => {
+    setOllamaModelsLoading(true)
+    setOllamaModelsError('')
+    setOllamaConnected(false)
+    // Persist the base URL before fetching so backend uses the right URL
+    await window.api.setPlannerSettings({ ollamaBaseUrl: baseUrl })
+    try {
+      const result = await (window.api as any).listOllamaModels(baseUrl)
+      if (result.success && result.data) {
+        const models = result.data as string[]
+        setOllamaModels(models)
+        if (models.length === 0) {
+          setOllamaModelsError('No models found. Pull a model with: ollama pull llama3')
+        } else {
+          setOllamaConnected(true)
+          // Read current settings from backend to check saved model
+          const currentResult = await window.api.getPlannerSettings()
+          const currentModel = currentResult?.data?.ollamaModel || ''
+          const modelToUse = currentModel && models.includes(currentModel) ? currentModel : models[0]
+          // Persist the selected model to the backend
+          const saveResult = await window.api.setPlannerSettings({ ollamaModel: modelToUse })
+          if (saveResult.success && saveResult.data) {
+            setSettings(saveResult.data)
+          }
+        }
+      } else {
+        setOllamaModels([])
+        setOllamaModelsError(result.error || 'Cannot connect to Ollama')
+      }
+    } catch {
+      setOllamaModels([])
+      setOllamaModelsError('Cannot connect to Ollama')
+    } finally {
+      setOllamaModelsLoading(false)
+    }
+  }
 
   useEffect(() => {
     window.api.getStartupEnabled().then((result) => {
@@ -48,6 +92,9 @@ export function SettingsPanel({ onSignOut }: SettingsPanelProps) {
     window.api.getPlannerSettings().then((result) => {
       if (result.success && result.data) {
         setSettings(result.data)
+        if (result.data.aiProvider === 'ollama') {
+          fetchOllamaModels(result.data.ollamaBaseUrl || 'http://localhost:11434')
+        }
       }
     })
     window.api.getCalendars().then((result) => {
@@ -97,6 +144,9 @@ export function SettingsPanel({ onSignOut }: SettingsPanelProps) {
     setKeyStatus('idle')
     setKeyError('')
     await window.api.setPlannerSettings({ aiProvider: provider })
+    if (provider === 'ollama') {
+      fetchOllamaModels(settings.ollamaBaseUrl || 'http://localhost:11434')
+    }
   }
 
   const saveSetting = async (updates: Partial<PlannerSettings>) => {
@@ -130,6 +180,7 @@ export function SettingsPanel({ onSignOut }: SettingsPanelProps) {
     }
   }
 
+  const [newTag, setNewTag] = useState('')
   const [capturingHotkey, setCapturingHotkey] = useState(false)
 
   const handleHotkeyKeyDown = useCallback((e: React.KeyboardEvent) => {
@@ -251,53 +302,123 @@ export function SettingsPanel({ onSignOut }: SettingsPanelProps) {
           >
             Gemini
           </button>
+          <button
+            className={`settings-toggle-btn ${settings.aiProvider === 'ollama' ? 'active' : ''}`}
+            onClick={() => handleProviderChange('ollama')}
+          >
+            Ollama
+          </button>
         </div>
       </div>
 
-      <div className="settings-item settings-item-col">
-        <span>API Key {settings.aiApiKey ? '(configured)' : ''}</span>
-        <div className="settings-key-row">
-          <input
-            type="password"
-            className="settings-input"
-            placeholder={settings.aiApiKey ? '••••••••' : `Enter ${settings.aiProvider} API key`}
-            value={apiKeyInput}
-            onChange={(e) => {
-              setApiKeyInput(e.target.value)
-              if (keyStatus !== 'idle' && keyStatus !== 'validating') {
-                setKeyStatus('idle')
-                setKeyError('')
-              }
-            }}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && apiKeyInput) handleApiKeySave()
-            }}
-          />
-          <button
-            className="settings-key-save"
-            onClick={handleApiKeySave}
-            disabled={!apiKeyInput || keyStatus === 'validating'}
-          >
-            {keyStatus === 'validating' ? (
-              <Loader2 size={14} className="spin" />
-            ) : (
-              'Save'
+      {settings.aiProvider === 'ollama' ? (
+        <>
+          <div className="settings-item settings-item-col">
+            <span>Base URL</span>
+            <div className="settings-key-row">
+              <input
+                type="text"
+                className="settings-input"
+                placeholder="http://localhost:11434"
+                value={settings.ollamaBaseUrl}
+                onChange={(e) => setSettings((prev) => ({ ...prev, ollamaBaseUrl: e.target.value }))}
+                onBlur={() => saveSetting({ ollamaBaseUrl: settings.ollamaBaseUrl })}
+              />
+              <button
+                className="settings-key-save"
+                onClick={() => fetchOllamaModels(settings.ollamaBaseUrl)}
+                disabled={ollamaModelsLoading}
+              >
+                {ollamaModelsLoading ? (
+                  <Loader2 size={14} className="spin" />
+                ) : (
+                  'Connect'
+                )}
+              </button>
+            </div>
+            {ollamaConnected && (
+              <div className="settings-key-status settings-key-valid">
+                <Check size={12} />
+                Connected — {ollamaModels.length} model{ollamaModels.length !== 1 ? 's' : ''} found
+              </div>
             )}
-          </button>
+            {ollamaModelsError && (
+              <div className="settings-key-status settings-key-invalid">
+                <X size={12} />
+                {ollamaModelsError}
+              </div>
+            )}
+          </div>
+
+          <div className="settings-item settings-item-col">
+            <span>Model</span>
+            {ollamaModels.length > 0 ? (
+              <select
+                className="settings-select"
+                value={settings.ollamaModel}
+                onChange={(e) => {
+                  setSettings((prev) => ({ ...prev, ollamaModel: e.target.value }))
+                  saveSetting({ ollamaModel: e.target.value })
+                }}
+              >
+                {!settings.ollamaModel && <option value="">Select a model...</option>}
+                {ollamaModels.map((m) => (
+                  <option key={m} value={m}>{m}</option>
+                ))}
+              </select>
+            ) : (
+              <span style={{ fontSize: 11, opacity: 0.6 }}>
+                {ollamaModelsLoading ? 'Loading models...' : 'Click Connect to load models'}
+              </span>
+            )}
+          </div>
+        </>
+      ) : (
+        <div className="settings-item settings-item-col">
+          <span>API Key {settings.aiApiKey ? '(configured)' : ''}</span>
+          <div className="settings-key-row">
+            <input
+              type="password"
+              className="settings-input"
+              placeholder={settings.aiApiKey ? '••••••••' : `Enter ${settings.aiProvider} API key`}
+              value={apiKeyInput}
+              onChange={(e) => {
+                setApiKeyInput(e.target.value)
+                if (keyStatus !== 'idle' && keyStatus !== 'validating') {
+                  setKeyStatus('idle')
+                  setKeyError('')
+                }
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && apiKeyInput) handleApiKeySave()
+              }}
+            />
+            <button
+              className="settings-key-save"
+              onClick={handleApiKeySave}
+              disabled={!apiKeyInput || keyStatus === 'validating'}
+            >
+              {keyStatus === 'validating' ? (
+                <Loader2 size={14} className="spin" />
+              ) : (
+                'Save'
+              )}
+            </button>
+          </div>
+          {keyStatus === 'valid' && (
+            <div className="settings-key-status settings-key-valid">
+              <Check size={12} />
+              API key verified and saved
+            </div>
+          )}
+          {keyStatus === 'invalid' && (
+            <div className="settings-key-status settings-key-invalid">
+              <X size={12} />
+              {keyError}
+            </div>
+          )}
         </div>
-        {keyStatus === 'valid' && (
-          <div className="settings-key-status settings-key-valid">
-            <Check size={12} />
-            API key verified and saved
-          </div>
-        )}
-        {keyStatus === 'invalid' && (
-          <div className="settings-key-status settings-key-invalid">
-            <X size={12} />
-            {keyError}
-          </div>
-        )}
-      </div>
+      )}
 
       <div className="settings-item">
         <span>Working hours</span>
@@ -386,6 +507,67 @@ export function SettingsPanel({ onSignOut }: SettingsPanelProps) {
           </select>
         </div>
       )}
+
+      <div className="settings-divider" />
+
+      {/* AI Rename Tags */}
+      <div className="settings-section-label">Rename Tags</div>
+
+      <div className="settings-item settings-item-col">
+        <span>Tags used when AI renames tasks</span>
+        <div className="rename-tags-chips">
+          {(settings.renameTags || []).map((tag) => (
+            <span key={tag} className="rename-tag-chip">
+              {tag}
+              <button
+                className="rename-tag-remove"
+                onClick={() => {
+                  const updated = settings.renameTags.filter((t) => t !== tag)
+                  setSettings((prev) => ({ ...prev, renameTags: updated }))
+                  saveSetting({ renameTags: updated })
+                }}
+              >
+                <X size={10} />
+              </button>
+            </span>
+          ))}
+        </div>
+        <div className="settings-key-row">
+          <input
+            type="text"
+            className="settings-input"
+            placeholder="Add a tag..."
+            value={newTag}
+            onChange={(e) => setNewTag(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && newTag.trim()) {
+                const trimmed = newTag.trim()
+                if (!settings.renameTags.includes(trimmed)) {
+                  const updated = [...settings.renameTags, trimmed]
+                  setSettings((prev) => ({ ...prev, renameTags: updated }))
+                  saveSetting({ renameTags: updated })
+                }
+                setNewTag('')
+              }
+            }}
+          />
+          <button
+            className="settings-key-save"
+            onClick={() => {
+              const trimmed = newTag.trim()
+              if (trimmed && !settings.renameTags.includes(trimmed)) {
+                const updated = [...settings.renameTags, trimmed]
+                setSettings((prev) => ({ ...prev, renameTags: updated }))
+                saveSetting({ renameTags: updated })
+              }
+              setNewTag('')
+            }}
+            disabled={!newTag.trim()}
+          >
+            <Plus size={14} />
+          </button>
+        </div>
+      </div>
 
       <div className="settings-divider" />
 

@@ -48,42 +48,65 @@ interface PlanRequest {
   taskListNames?: Record<string, string>
 }
 
-function buildPersonaContext(): string {
-  if (!isPersonaConfigured()) return ''
-  const p = getPersona()
+function buildFullPersonaBlock(): string {
+  const settings = getSettings()
+  const persona = getPersona()
   const lines: string[] = []
-  if (p.name) lines.push(`- Name: ${p.name}`)
-  if (p.role) lines.push(`- Role: ${p.role}`)
-  if (p.workStyle) lines.push(`- Work style: ${p.workStyle}`)
-  if (p.preferences) lines.push(`- Preferences: ${p.preferences}`)
-  if (lines.length === 0) return ''
-  return `\nUser persona:\n${lines.join('\n')}`
+
+  // Identity
+  if (persona.name) lines.push(`Name: ${persona.name}`)
+  if (persona.role) lines.push(`Role: ${persona.role}`)
+
+  // Work rhythm
+  lines.push(`Working hours: ${settings.workingHoursStart} – ${settings.workingHoursEnd}`)
+  lines.push(`Lunch break: ${settings.lunchBreakStart} – ${settings.lunchBreakEnd}`)
+  lines.push(`Break between blocks: ${settings.breakDurationMinutes} minutes`)
+
+  // Work style & preferences
+  if (persona.workStyle) lines.push(`Work style: ${persona.workStyle}`)
+  if (persona.preferences) lines.push(`Preferences: ${persona.preferences}`)
+
+  return lines.join('\n')
 }
 
-const PLANNER_SYSTEM_PROMPT = `You are a day planner AI. Given a list of tasks and existing calendar events, create an optimal daily schedule by grouping related tasks into named contextual blocks.
+function buildPlannerSystemPrompt(): string {
+  const personaBlock = buildFullPersonaBlock()
 
-Rules:
+  return `You are a personal day planner AI that deeply understands the user and creates schedules tailored to how they actually work.
+
+## Who you are planning for
+${personaBlock}
+
+## Scheduling rules
 - NEVER schedule over existing calendar events
-- NEVER schedule over the lunch break period — keep it free
-- Group tasks that share similar context into named blocks (e.g. "Communication", "Deep Work", "Admin", "Creative", "Review", "Planning")
-- Each block should contain 1-5 tasks; a solo task gets its own block
-- Include breaks BETWEEN blocks, not between tasks within a block
-- Prioritize tasks with closer due dates
-- Tasks without due dates should still be scheduled sensibly
-- Keep all blocks within the specified working hours
-- Estimate each task's duration based on title and notes (default 30 minutes). If a task has a timebox duration, use that exact duration.
-- Each block's start/end should cover the total estimated time of its tasks
-- MIT (Most Important Task) tasks MUST be scheduled first, before any other tasks. MIT #1 is the "frog" — schedule it as the very first task block.
-- Tasks marked with [energy: high] should be scheduled in morning peak hours when energy is highest
-- Tasks marked with [energy: low] should be scheduled after lunch when energy naturally dips
-- Tasks marked with [energy: medium] are flexible and can fill remaining slots
-- Use the [list: ...] tag to understand task domain — group tasks from the same list when contextually sensible
-- Tasks marked [subtask of: ...] should be scheduled near their parent task when possible
-- If yesterday's review context is provided, use it to calibrate how ambitiously to plan the day (e.g. lower rating = lighter load)
-- If a user persona is provided, tailor the schedule to their role and work style preferences
-- Return ONLY valid JSON, no markdown fences or extra text
+- NEVER schedule over the lunch break period — keep it completely free
+- Keep ALL blocks strictly within the user's working hours
+- Group related tasks into named contextual blocks (e.g. "Deep Work", "Communication", "Admin", "Creative", "Review", "Planning")
+- Each block should contain 1-5 related tasks; a solo task gets its own block
+- Include breaks BETWEEN blocks (use the user's configured break duration), not between tasks within a block
+- Each block's start/end must cover the total estimated time of its tasks plus transitions
 
-Return JSON in this exact format:
+## Task priority & energy
+- MIT (Most Important Task) tasks MUST be scheduled first. MIT #1 is the "frog" — always the very first block of the day.
+- Tasks marked [energy: high] → schedule during morning peak hours when cognitive energy is highest
+- Tasks marked [energy: low] → schedule in the post-lunch dip when energy naturally drops
+- Tasks marked [energy: medium] → flexible, fill remaining slots
+- Prioritize tasks with closer due dates; tasks without due dates fill gaps sensibly
+
+## Context awareness
+- Use [list: ...] tags to understand task domain — group tasks from the same list when contextually sensible
+- Tasks marked [subtask of: ...] should be scheduled near their parent task
+- If yesterday's review data is provided, calibrate ambition accordingly (low rating = lighter, more buffered schedule)
+- If historical time tracking data is provided, use it to adjust duration estimates
+- Respect the user's work style and preferences above all — if they prefer deep focus mornings, don't schedule meetings there; if they like short tasks first, front-load quick wins
+
+## Estimation
+- Estimate each task's duration based on title, notes, and context (default 30 minutes)
+- If a task has a [timebox: Xmin] tag, use that exact duration
+- Be realistic — account for context switching between different types of work
+
+## Output format
+Return ONLY valid JSON, no markdown fences or extra text:
 {
   "blocks": [
     {
@@ -96,8 +119,9 @@ Return JSON in this exact format:
       ]
     }
   ],
-  "summary": "Brief overview of the planned day"
+  "summary": "Brief personalized overview of the planned day"
 }`
+}
 
 function buildPrompt(request: PlanRequest): string {
   const eventsList = request.existingEvents.length > 0
@@ -164,16 +188,16 @@ function buildPrompt(request: PlanRequest): string {
 
 Working hours: ${request.workingHours.start} to ${request.workingHours.end}
 Lunch break: ${request.lunchBreak.start} to ${request.lunchBreak.end} (DO NOT schedule over this)
-Break duration between tasks: ${request.breakMinutes} minutes
+Break duration between blocks: ${request.breakMinutes} minutes
 
 Existing calendar events (DO NOT schedule over these):
 ${eventsList}
 
 Tasks to schedule:
 ${tasksList}
-${historicalNote}${reviewContext}${buildPersonaContext()}
+${historicalNote}${reviewContext}
 
-Create an optimal schedule. Return JSON only.`
+Create an optimal, personalized schedule. Return JSON only.`
 }
 
 function parseAiResponse(text: string): DayPlan {
@@ -210,7 +234,7 @@ async function callAnthropic(apiKey: string, prompt: string, systemPrompt?: stri
   const response = await anthropic.messages.create({
     model: 'claude-sonnet-4-20250514',
     max_tokens: 2048,
-    system: systemPrompt || PLANNER_SYSTEM_PROMPT,
+    system: systemPrompt || buildPlannerSystemPrompt(),
     messages: [{ role: 'user', content: prompt }]
   })
   const textBlock = response.content.find((block) => block.type === 'text')
@@ -227,7 +251,7 @@ async function callOpenAI(apiKey: string, prompt: string, systemPrompt?: string)
     model: 'gpt-4o-mini',
     response_format: { type: 'json_object' },
     messages: [
-      { role: 'system', content: systemPrompt || PLANNER_SYSTEM_PROMPT },
+      { role: 'system', content: systemPrompt || buildPlannerSystemPrompt() },
       { role: 'user', content: prompt }
     ]
   })
@@ -243,7 +267,7 @@ async function callGemini(apiKey: string, prompt: string, systemPrompt?: string)
   const genAI = new GoogleGenerativeAI(apiKey)
   const model = genAI.getGenerativeModel({
     model: 'gemini-2.0-flash',
-    systemInstruction: systemPrompt || PLANNER_SYSTEM_PROMPT
+    systemInstruction: systemPrompt || buildPlannerSystemPrompt()
   })
   const result = await model.generateContent(prompt)
   const text = result.response.text()
@@ -253,10 +277,45 @@ async function callGemini(apiKey: string, prompt: string, systemPrompt?: string)
   return text
 }
 
+async function callOllama(baseUrl: string, model: string, prompt: string, systemPrompt?: string): Promise<string> {
+  const { default: OpenAI } = await import('openai')
+  const openai = new OpenAI({ baseURL: `${baseUrl}/v1`, apiKey: 'ollama' })
+  const response = await openai.chat.completions.create({
+    model,
+    messages: [
+      { role: 'system', content: systemPrompt || buildPlannerSystemPrompt() },
+      { role: 'user', content: prompt }
+    ]
+  })
+  const content = response.choices[0]?.message?.content
+  if (!content) {
+    throw new Error('No response from Ollama')
+  }
+  return content
+}
+
+export async function listOllamaModels(baseUrl: string): Promise<string[]> {
+  const res = await fetch(`${baseUrl}/api/tags`)
+  if (!res.ok) {
+    throw new Error(`Ollama API returned ${res.status}`)
+  }
+  const data = await res.json()
+  return (data.models || []).map((m: any) => m.name as string)
+}
+
 export async function validateApiKey(
-  provider: 'anthropic' | 'openai' | 'gemini',
-  apiKey: string
+  provider: 'anthropic' | 'openai' | 'gemini' | 'ollama',
+  apiKey: string,
+  ollamaBaseUrl?: string
 ): Promise<void> {
+  if (provider === 'ollama') {
+    const baseUrl = ollamaBaseUrl || 'http://localhost:11434'
+    const res = await fetch(`${baseUrl}/api/tags`)
+    if (!res.ok) {
+      throw new Error(`Cannot connect to Ollama at ${baseUrl}`)
+    }
+    return
+  }
   if (provider === 'openai') {
     const { default: OpenAI } = await import('openai')
     const openai = new OpenAI({ apiKey })
@@ -285,14 +344,20 @@ export async function validateApiKey(
 // Subtask Generation
 // ═══════════════════════════════════════
 
-const SUBTASK_SYSTEM_PROMPT = `You are a task decomposition AI. Given a task title, optional notes, and a deadline, break the task into smaller subtasks with time estimates.
+function buildSubtaskSystemPrompt(): string {
+  const personaBlock = buildFullPersonaBlock()
+  return `You are a task decomposition AI that understands the user and breaks tasks into subtasks sized for how they work.
 
-Rules:
+## Who you are helping
+${personaBlock}
+
+## Rules
 - Decompose into 3-7 actionable subtasks
 - Each subtask should be specific and completable in one sitting
-- Estimate minutes realistically (15-120 minutes per subtask)
+- Estimate minutes realistically (15-120 minutes per subtask) — account for the user's work style and break rhythm
 - Order subtasks logically (dependencies first)
-- If a user persona is provided, tailor subtask granularity to their experience level and role
+- Tailor subtask granularity to the user's role and experience level
+- Use language appropriate to the user's domain
 - Return ONLY valid JSON, no markdown fences or extra text
 
 Return JSON in this exact format:
@@ -301,18 +366,25 @@ Return JSON in this exact format:
     { "title": "Subtask description", "estimatedMinutes": 30 }
   ]
 }`
+}
 
-const WORK_BACKWARDS_SYSTEM_PROMPT = `You are a project scheduling AI. Given a task with a deadline, break it into subtasks and schedule them across days leading up to the deadline.
+function buildWorkBackwardsSystemPrompt(): string {
+  const personaBlock = buildFullPersonaBlock()
+  return `You are a project scheduling AI that understands the user and plans backwards from deadlines in a way that fits their rhythm.
 
-Rules:
+## Who you are helping
+${personaBlock}
+
+## Rules
 - Decompose into 3-7 actionable subtasks
 - Schedule subtasks working backwards from the deadline
 - NEVER schedule over existing calendar events
 - NEVER schedule over the lunch break period — keep it free
-- Keep all work within specified working hours
-- Include breaks between tasks
+- Keep all work within the user's working hours
+- Include breaks between tasks matching the user's break duration
 - Leave buffer time before the deadline
-- Estimate task durations realistically
+- Estimate task durations realistically — account for the user's work style
+- Schedule high-energy subtasks during the user's peak hours
 - Return ONLY valid JSON, no markdown fences or extra text
 
 Return JSON in this exact format:
@@ -324,6 +396,7 @@ Return JSON in this exact format:
     { "subtaskTitle": "Subtask description", "date": "YYYY-MM-DD", "start": "HH:MM", "end": "HH:MM" }
   ]
 }`
+}
 
 interface SubtaskRequest {
   taskTitle: string
@@ -347,7 +420,7 @@ function buildSubtaskPrompt(request: SubtaskRequest): string {
 Task: "${request.taskTitle}"
 ${request.taskNotes ? `Notes: ${request.taskNotes}` : ''}
 Deadline: ${request.deadline}
-${buildPersonaContext()}
+
 Return JSON only.`
 }
 
@@ -378,12 +451,20 @@ Existing calendar events (DO NOT schedule over these):
 ${eventsList}
 
 Break this into subtasks and schedule them across days.
-${buildPersonaContext()}
+
 Return JSON only.`
 }
 
 async function callAiWithPrompt(systemPrompt: string, userPrompt: string): Promise<string> {
   const settings = getSettings()
+
+  if (settings.aiProvider === 'ollama') {
+    if (!settings.ollamaModel) {
+      throw new Error('No Ollama model selected. Go to Settings to pick one.')
+    }
+    return callOllama(settings.ollamaBaseUrl, settings.ollamaModel, userPrompt, systemPrompt)
+  }
+
   const apiKey = getDecryptedApiKey()
   if (!apiKey) {
     throw new Error('No AI API key configured. Go to Settings to add one.')
@@ -400,7 +481,7 @@ async function callAiWithPrompt(systemPrompt: string, userPrompt: string): Promi
 
 export async function generateSubtasks(request: SubtaskRequest): Promise<{ subtasks: { title: string; estimatedMinutes: number }[] }> {
   const prompt = buildSubtaskPrompt(request)
-  const responseText = await callAiWithPrompt(SUBTASK_SYSTEM_PROMPT, prompt)
+  const responseText = await callAiWithPrompt(buildSubtaskSystemPrompt(), prompt)
   const parsed = parseAiResponse(responseText)
   // parseAiResponse returns DayPlan shape, but we need subtask shape — re-parse
   let cleaned = responseText.trim()
@@ -418,7 +499,7 @@ export async function generateSubtasks(request: SubtaskRequest): Promise<{ subta
 
 export async function workBackwards(request: WorkBackwardsRequest): Promise<{ subtasks: { title: string; estimatedMinutes: number }[]; schedule: { subtaskTitle: string; date: string; start: string; end: string }[] }> {
   const prompt = buildWorkBackwardsPrompt(request)
-  const responseText = await callAiWithPrompt(WORK_BACKWARDS_SYSTEM_PROMPT, prompt)
+  const responseText = await callAiWithPrompt(buildWorkBackwardsSystemPrompt(), prompt)
   let cleaned = responseText.trim()
   if (cleaned.startsWith('```')) {
     cleaned = cleaned.replace(/^```(?:json)?\s*/, '').replace(/```\s*$/, '')
@@ -442,19 +523,35 @@ export async function workBackwards(request: WorkBackwardsRequest): Promise<{ su
 // AI Rename & Improve Tasks
 // ═══════════════════════════════════════
 
-const RENAME_SYSTEM_PROMPT = `You are a task improvement AI. Given a list of tasks with their current titles and notes, improve them.
+function buildRenameSystemPrompt(): string {
+  const personaBlock = buildFullPersonaBlock()
+  const settings = getSettings()
+  const tags = settings.renameTags || []
+  const tagInstruction = tags.length > 0
+    ? `\n## Title Tags
+- Prefix each task title with a [Tag] from this allowed set: ${tags.join(', ')}
+- Pick the single most relevant tag based on the task content, list name, and notes
+- If no tag fits well, omit the bracket and return a clean title
+- The tag replaces the leading verb — e.g. [Review] PR #42 feedback, not [Review] Review PR #42 feedback`
+    : ''
 
-Rules:
-- Make titles concise, action-oriented, and clear (start with a verb)
+  return `You are a task improvement AI that understands the user and rewrites tasks in their voice and domain.
+
+## Who you are helping
+${personaBlock}
+
+## Rules
+- Make titles concise, action-oriented, and clear
+- Adapt language and tone to match the user's role and domain
 - If notes are empty, add a brief 1-line note with context or first step
 - If notes exist, you MUST preserve ALL existing content — URLs, links, numbers, dates, references, and any structured data must remain exactly as-is. Only rephrase surrounding prose for clarity.
 - NEVER remove or shorten URLs, numeric values, IDs, phone numbers, or any reference data from notes
 - Do NOT change the meaning or scope of the task
-- If a user persona is provided, adapt language and tone to match their role and domain
 - Use the list name as domain context (e.g. a task in "Work" should use professional language, a task in "Health" should use wellness language)
 - Consider due dates to add urgency cues in notes when appropriate
 - For subtasks, ensure the title is clear even without seeing the parent task
 - Return ONLY valid JSON, no markdown fences or extra text
+${tagInstruction}
 
 Return JSON in this exact format:
 {
@@ -462,6 +559,7 @@ Return JSON in this exact format:
     { "taskId": "id-here", "newTitle": "Improved title", "newNotes": "Improved or added notes" }
   ]
 }`
+}
 
 interface RenameTask {
   id: string
@@ -490,15 +588,14 @@ function buildRenamePrompt(tasks: RenameTask[]): string {
     })
     .join('\n')
 
-  const personaCtx = buildPersonaContext()
-  return `Improve these task titles and notes:\n\n${tasksList}${personaCtx}\n\nReturn JSON only.`
+  return `Improve these task titles and notes:\n\n${tasksList}\n\nReturn JSON only.`
 }
 
 export async function renameTasks(request: {
   tasks: RenameTask[]
 }): Promise<{ taskId: string; newTitle: string; newNotes: string }[]> {
   const prompt = buildRenamePrompt(request.tasks)
-  const responseText = await callAiWithPrompt(RENAME_SYSTEM_PROMPT, prompt)
+  const responseText = await callAiWithPrompt(buildRenameSystemPrompt(), prompt)
   let cleaned = responseText.trim()
   if (cleaned.startsWith('```')) {
     cleaned = cleaned.replace(/^```(?:json)?\s*/, '').replace(/```\s*$/, '')
@@ -513,21 +610,27 @@ export async function renameTasks(request: {
 
 export async function generatePlan(request: PlanRequest): Promise<DayPlan> {
   const settings = getSettings()
-  const apiKey = getDecryptedApiKey()
-
-  if (!apiKey) {
-    throw new Error('No AI API key configured. Go to Settings to add one.')
-  }
-
   const prompt = buildPrompt(request)
   let responseText: string
 
-  if (settings.aiProvider === 'openai') {
-    responseText = await callOpenAI(apiKey, prompt)
-  } else if (settings.aiProvider === 'gemini') {
-    responseText = await callGemini(apiKey, prompt)
+  if (settings.aiProvider === 'ollama') {
+    if (!settings.ollamaModel) {
+      throw new Error('No Ollama model selected. Go to Settings to pick one.')
+    }
+    responseText = await callOllama(settings.ollamaBaseUrl, settings.ollamaModel, prompt)
   } else {
-    responseText = await callAnthropic(apiKey, prompt)
+    const apiKey = getDecryptedApiKey()
+    if (!apiKey) {
+      throw new Error('No AI API key configured. Go to Settings to add one.')
+    }
+
+    if (settings.aiProvider === 'openai') {
+      responseText = await callOpenAI(apiKey, prompt)
+    } else if (settings.aiProvider === 'gemini') {
+      responseText = await callGemini(apiKey, prompt)
+    } else {
+      responseText = await callAnthropic(apiKey, prompt)
+    }
   }
 
   return parseAiResponse(responseText)

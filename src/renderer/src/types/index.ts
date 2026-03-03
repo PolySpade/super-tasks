@@ -59,7 +59,7 @@ export interface DayPlan {
 }
 
 export interface PlannerSettings {
-  aiProvider: 'anthropic' | 'openai' | 'gemini'
+  aiProvider: 'anthropic' | 'openai' | 'gemini' | 'ollama'
   aiApiKey: string
   workingHoursStart: string
   workingHoursEnd: string
@@ -69,6 +69,9 @@ export interface PlannerSettings {
   breakDurationMinutes: number
   quickCaptureHotkey: string
   quickCaptureDefaultListId: string
+  ollamaBaseUrl: string
+  ollamaModel: string
+  renameTags: string[]
 }
 
 export interface FocusSession {
