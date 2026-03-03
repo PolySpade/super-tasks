@@ -10,6 +10,10 @@ const api = {
   // Task Lists
   getTaskLists: () => ipcRenderer.invoke('tasks:get-lists'),
 
+  // Task List CRUD
+  createTaskList: (title: string) => ipcRenderer.invoke('tasks:create-list', title),
+  deleteTaskList: (taskListId: string) => ipcRenderer.invoke('tasks:delete-list', taskListId),
+
   // Tasks
   getTasks: (taskListId: string) => ipcRenderer.invoke('tasks:get', taskListId),
   createTask: (taskListId: string, title: string, notes?: string, due?: string, parentId?: string) =>

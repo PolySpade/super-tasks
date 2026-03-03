@@ -217,6 +217,21 @@ function TrayApp() {
     refreshTasks()
   }
 
+  const handleCreateList = async (title: string) => {
+    const res = await window.api.createTaskList(title)
+    if (res.success && res.data) {
+      await refreshLists()
+      setSelectedListId(res.data.id)
+    }
+  }
+
+  const handleDeleteList = async (listId: string) => {
+    const res = await window.api.deleteTaskList(listId)
+    if (res.success) {
+      await refreshLists()
+    }
+  }
+
   const handleSelectTask = (task: Task) => {
     setSelectedTask(task)
     setView('detail')
@@ -503,6 +518,8 @@ function TrayApp() {
                 taskCount={taskCount}
                 isOffline={isOffline}
                 onMinimize={handleToggleMiniTasks}
+                onCreateList={handleCreateList}
+                onDeleteList={handleDeleteList}
               />
               <TaskList
                 tasks={tasks}

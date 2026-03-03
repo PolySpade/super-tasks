@@ -2,6 +2,8 @@ import { ipcMain, Notification } from 'electron'
 import { signIn, signOut, isSignedIn, restoreSession } from './google-auth'
 import {
   getTaskLists,
+  createTaskList,
+  deleteTaskList,
   getTasks,
   createTask,
   updateTask,
@@ -88,6 +90,24 @@ export function registerIpcHandlers(): void {
     try {
       const lists = await getTaskLists()
       return { success: true, data: lists }
+    } catch (error: any) {
+      return { success: false, error: error.message }
+    }
+  })
+
+  ipcMain.handle('tasks:create-list', async (_event, title: string) => {
+    try {
+      const list = await createTaskList(title)
+      return { success: true, data: list }
+    } catch (error: any) {
+      return { success: false, error: error.message }
+    }
+  })
+
+  ipcMain.handle('tasks:delete-list', async (_event, taskListId: string) => {
+    try {
+      await deleteTaskList(taskListId)
+      return { success: true }
     } catch (error: any) {
       return { success: false, error: error.message }
     }

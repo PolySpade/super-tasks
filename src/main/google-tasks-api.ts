@@ -26,6 +26,17 @@ export async function getTaskLists() {
   return res.data.items || []
 }
 
+export async function createTaskList(title: string) {
+  const api = getTasksApi()
+  const res = await api.tasklists.insert({ requestBody: { title } })
+  return res.data
+}
+
+export async function deleteTaskList(taskListId: string) {
+  const api = getTasksApi()
+  await api.tasklists.delete({ tasklist: taskListId })
+}
+
 export async function getTasks(taskListId: string) {
   const api = getTasksApi()
   const res = await api.tasks.list({
