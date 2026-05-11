@@ -1,6 +1,6 @@
 import { Theme } from '../types'
 import { BUILT_IN_THEMES } from '../utils/theme'
-import { Plus, Pencil, Trash2 } from 'lucide-react'
+import { Check, Plus, Pencil, Trash2 } from 'lucide-react'
 
 interface ThemePickerProps {
   activeThemeId: string
@@ -22,51 +22,54 @@ export function ThemePicker({
   const allThemes = [...BUILT_IN_THEMES, ...customThemes]
 
   return (
-    <div className="theme-grid">
-      {allThemes.map((theme) => (
-        <div
-          key={theme.id}
-          className={`theme-swatch ${activeThemeId === theme.id ? 'theme-swatch-active' : ''}`}
-          onClick={() => onThemeChange(theme.id)}
-        >
+    <div className="theme-picker">
+      {allThemes.map((theme) => {
+        const isActive = activeThemeId === theme.id
+        return (
           <div
-            className="theme-swatch-preview"
-            style={{ background: theme.colors.bgPrimary }}
+            key={theme.id}
+            className={`theme-row ${isActive ? 'theme-row-active' : ''}`}
+            onClick={() => onThemeChange(theme.id)}
           >
-            <div
-              className="theme-swatch-accent"
-              style={{ background: theme.colors.accent }}
-            />
-          </div>
-          <div className="theme-swatch-footer">
-            <span className="theme-swatch-name">{theme.name}</span>
-            {!theme.builtIn && (
-              <div className="theme-swatch-actions">
-                <button
-                  className="theme-swatch-action-btn"
-                  onClick={(e) => { e.stopPropagation(); onEditCustom(theme) }}
-                  title="Edit"
-                >
-                  <Pencil size={10} />
-                </button>
-                <button
-                  className="theme-swatch-action-btn"
-                  onClick={(e) => { e.stopPropagation(); onDeleteCustom(theme.id) }}
-                  title="Delete"
-                >
-                  <Trash2 size={10} />
-                </button>
+            <div className="theme-row-left">
+              <div
+                className="theme-dot"
+                style={{ background: theme.colors.bgPrimary, borderColor: theme.colors.accent }}
+              >
+                <div className="theme-dot-inner" style={{ background: theme.colors.accent }} />
               </div>
-            )}
+              <span className="theme-row-name">{theme.name}</span>
+            </div>
+            <div className="theme-row-right">
+              {!theme.builtIn && (
+                <>
+                  <button
+                    className="theme-row-action"
+                    onClick={(e) => { e.stopPropagation(); onEditCustom(theme) }}
+                    title="Edit"
+                  >
+                    <Pencil size={11} />
+                  </button>
+                  <button
+                    className="theme-row-action theme-row-action-danger"
+                    onClick={(e) => { e.stopPropagation(); onDeleteCustom(theme.id) }}
+                    title="Delete"
+                  >
+                    <Trash2 size={11} />
+                  </button>
+                </>
+              )}
+              {isActive && <Check size={14} className="theme-row-check" />}
+            </div>
           </div>
-        </div>
-      ))}
-      <div className="theme-swatch theme-swatch-add" onClick={onCreateCustom}>
-        <div className="theme-swatch-preview theme-swatch-preview-add">
-          <Plus size={18} />
-        </div>
-        <div className="theme-swatch-footer">
-          <span className="theme-swatch-name">Custom</span>
+        )
+      })}
+      <div className="theme-row theme-row-add" onClick={onCreateCustom}>
+        <div className="theme-row-left">
+          <div className="theme-dot theme-dot-add">
+            <Plus size={10} />
+          </div>
+          <span className="theme-row-name">New theme</span>
         </div>
       </div>
     </div>

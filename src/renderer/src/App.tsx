@@ -97,6 +97,7 @@ function TrayApp() {
   const [miniTimer, setMiniTimer] = useState(false)
   const [miniTasks, setMiniTasks] = useState(false)
   const [gridView, setGridView] = useState(false)
+  const [expanded, setExpanded] = useState(false)
   const [dashboardKey, setDashboardKey] = useState(0)
 
   const [pendingOffline, setPendingOffline] = useState(0)
@@ -337,6 +338,16 @@ function TrayApp() {
     }
   }
 
+  const handleToggleExpand = async () => {
+    if (expanded) {
+      await window.api.setWindowSize(440, 520)
+      setExpanded(false)
+    } else {
+      await window.api.setWindowSize(960, 600)
+      setExpanded(true)
+    }
+  }
+
   const handleGridSelectTask = (task: Task, listId: string) => {
     setSelectedListId(listId)
     window.api.setWindowSize(440, 520)
@@ -455,6 +466,8 @@ function TrayApp() {
           }
           title={getTitle()}
           isOffline={isOffline}
+          expanded={expanded}
+          onToggleExpand={handleToggleExpand}
         />
       )}
 

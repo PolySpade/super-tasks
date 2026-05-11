@@ -1,4 +1,4 @@
-import { Settings, X, ArrowLeft } from 'lucide-react'
+import { Settings, X, ArrowLeft, Maximize2, Minimize2 } from 'lucide-react'
 
 interface TitleBarProps {
   onSettingsClick: () => void
@@ -7,9 +7,11 @@ interface TitleBarProps {
   onBack?: () => void
   title?: string
   isOffline?: boolean
+  expanded?: boolean
+  onToggleExpand?: () => void
 }
 
-export function TitleBar({ onSettingsClick, onClose, showBack, onBack, title, isOffline }: TitleBarProps) {
+export function TitleBar({ onSettingsClick, onClose, showBack, onBack, title, isOffline, expanded, onToggleExpand }: TitleBarProps) {
   return (
     <div className="title-bar">
       <div className="title-bar-drag">
@@ -35,6 +37,11 @@ export function TitleBar({ onSettingsClick, onClose, showBack, onBack, title, is
             flexShrink: 0
           }}
         />
+        {onToggleExpand && (
+          <button className="title-bar-btn" onClick={onToggleExpand} title={expanded ? 'Compact view' : 'Expanded view'}>
+            {expanded ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
+          </button>
+        )}
         <button className="title-bar-btn" onClick={onSettingsClick} title="Settings">
           <Settings size={14} />
         </button>

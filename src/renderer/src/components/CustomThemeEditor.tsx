@@ -33,7 +33,7 @@ function extractKeyColors(theme: Theme): KeyColors {
   }
 }
 
-const COLOR_LABELS: { key: keyof KeyColors; label: string }[] = [
+const COLOR_FIELDS: { key: keyof KeyColors; label: string }[] = [
   { key: 'background', label: 'Background' },
   { key: 'text', label: 'Text' },
   { key: 'accent', label: 'Accent' },
@@ -60,9 +60,7 @@ export function CustomThemeEditor({ theme, onSave, onCancel, onDelete }: CustomT
   const handleBaseChange = (id: string) => {
     setBaseFromId(id)
     const base = BUILT_IN_THEMES.find((t) => t.id === id)
-    if (base) {
-      setKeyColors(extractKeyColors(base))
-    }
+    if (base) setKeyColors(extractKeyColors(base))
   }
 
   const handleColorChange = (key: keyof KeyColors, value: string) => {
@@ -78,14 +76,14 @@ export function CustomThemeEditor({ theme, onSave, onCancel, onDelete }: CustomT
   }
 
   return (
-    <div className="custom-theme-editor-overlay" onClick={onCancel}>
-      <div className="custom-theme-editor" onClick={(e) => e.stopPropagation()}>
-        <div className="custom-theme-editor-header">
-          <span>{isEditing ? 'Edit Theme' : 'New Custom Theme'}</span>
+    <div className="modal-overlay" onClick={onCancel}>
+      <div className="plan-confirm-card theme-editor-card" onClick={(e) => e.stopPropagation()}>
+        <div className="theme-editor-title">
+          {isEditing ? 'Edit Theme' : 'New Theme'}
         </div>
 
-        <div className="custom-theme-editor-body">
-          <div className="custom-theme-editor-field">
+        <div className="theme-editor-fields">
+          <div className="theme-editor-field">
             <label>Name</label>
             <input
               type="text"
@@ -93,12 +91,13 @@ export function CustomThemeEditor({ theme, onSave, onCancel, onDelete }: CustomT
               placeholder="My Theme"
               value={name}
               onChange={(e) => setName(e.target.value)}
+              autoFocus
             />
           </div>
 
           {!isEditing && (
-            <div className="custom-theme-editor-field">
-              <label>Base from</label>
+            <div className="theme-editor-field">
+              <label>Start from</label>
               <select
                 className="settings-select"
                 value={baseFromId}
@@ -111,38 +110,36 @@ export function CustomThemeEditor({ theme, onSave, onCancel, onDelete }: CustomT
             </div>
           )}
 
-          <div className="custom-theme-editor-colors">
-            {COLOR_LABELS.map(({ key, label }) => (
-              <div key={key} className="custom-theme-editor-color-row">
+          <div className="theme-editor-colors">
+            {COLOR_FIELDS.map(({ key, label }) => (
+              <div key={key} className="theme-editor-color">
                 <label>{label}</label>
-                <div className="custom-theme-editor-color-input">
-                  <input
-                    type="color"
-                    value={keyColors[key]}
-                    onChange={(e) => handleColorChange(key, e.target.value)}
-                  />
-                  <span className="custom-theme-editor-color-hex">{keyColors[key]}</span>
-                </div>
+                <input
+                  type="color"
+                  value={keyColors[key]}
+                  onChange={(e) => handleColorChange(key, e.target.value)}
+                />
               </div>
             ))}
           </div>
         </div>
 
-        <div className="custom-theme-editor-footer">
+        <div className="theme-editor-actions">
           {isEditing && onDelete && (
             <button
-              className="custom-theme-editor-btn custom-theme-editor-btn-danger"
+              className="plan-confirm-cancel"
+              style={{ color: 'var(--danger)' }}
               onClick={() => onDelete(baseTheme.id)}
             >
               Delete
             </button>
           )}
           <div style={{ flex: 1 }} />
-          <button className="custom-theme-editor-btn" onClick={onCancel}>
+          <button className="plan-confirm-cancel" onClick={onCancel}>
             Cancel
           </button>
           <button
-            className="custom-theme-editor-btn custom-theme-editor-btn-primary"
+            className="plan-confirm-accept"
             onClick={handleSave}
             disabled={!name.trim()}
           >
