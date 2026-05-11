@@ -27,6 +27,7 @@ import { useEODReview } from './hooks/useEODReview'
 import { DailyRitual } from './components/DailyRitual'
 import { useDailyRitual } from './hooks/useDailyRitual'
 import { LayoutDashboard, ListTodo, CalendarDays, CalendarClock, Timer, Minimize2, Maximize2, Grid2x2 } from 'lucide-react'
+import { applyTheme, resolveTheme, BUILT_IN_THEMES } from './utils/theme'
 
 type Tab = 'dashboard' | 'tasks' | 'calendar' | 'plan' | 'timer'
 type View = 'dashboard' | 'tasks' | 'settings' | 'detail' | 'plan' | 'calendar' | 'deadlines' | 'timer' | 'weekly-review'
@@ -35,7 +36,19 @@ type View = 'dashboard' | 'tasks' | 'settings' | 'detail' | 'plan' | 'calendar' 
 const isCalendarWindow = window.location.search.includes('view=calendar')
 const isQuickCapture = window.location.search.includes('view=quick-capture')
 
+function useThemeOnMount() {
+  useEffect(() => {
+    window.api.getThemeData().then((result) => {
+      if (result.success && result.data) {
+        const theme = resolveTheme(result.data.activeThemeId, result.data.customThemes || [])
+        if (theme) applyTheme(theme.colors)
+      }
+    })
+  }, [])
+}
+
 export default function App() {
+  useThemeOnMount()
   if (isQuickCapture) {
     return <QuickCaptureInput />
   }

@@ -129,3 +129,31 @@ export interface WorkBackwardsPlan {
   subtasks: GeneratedSubtask[]
   schedule: { subtaskTitle: string; date: string; start: string; end: string }[]
 }
+
+export interface ThemeColors {
+  bgPrimary: string; bgSecondary: string; bgTertiary: string;
+  bgHover: string; bgSurface: string; bgInput: string;
+  textPrimary: string; textSecondary: string; textTertiary: string;
+  accent: string; accentHover: string; accentSecondary: string; accentDim: string;
+  success: string; successDim: string;
+  danger: string; dangerHover: string; dangerDim: string;
+  warning: string; warningDim: string;
+  errorBg: string; errorText: string;
+  glass1: string; glass2: string; glass3: string; glass4: string;
+  border: string; borderLight: string; glassBorder: string; glassBorderStrong: string;
+  shadowSm: string; shadowMd: string; shadowLg: string;
+  shadowGlowAccent: string; shadowGlowSuccess: string;
+  meshGradient: string;
+}
+
+export interface Theme {
+  id: string
+  name: string
+  builtIn: boolean
+  colors: ThemeColors
+}
+
+export interface ThemeStoreData {
+  activeThemeId: string
+  customThemes: Theme[]
+}

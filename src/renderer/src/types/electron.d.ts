@@ -84,6 +84,12 @@ interface ElectronAPI {
   // Window events
   onWindowShown: (callback: () => void) => () => void
 
+  // Theme
+  getThemeData: () => Promise<{ success: boolean; data?: any; error?: string }>
+  setActiveTheme: (themeId: string) => Promise<{ success: boolean; data?: any; error?: string }>
+  saveCustomTheme: (theme: any) => Promise<{ success: boolean; data?: any; error?: string }>
+  deleteCustomTheme: (themeId: string) => Promise<{ success: boolean; data?: any; error?: string }>
+
   // Offline queue
   getOfflineQueue: () => Promise<{ success: boolean; data?: any[]; error?: string }>
   processOfflineQueue: () => Promise<{ success: boolean; data?: number; error?: string }>

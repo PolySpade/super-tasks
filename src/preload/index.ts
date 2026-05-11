@@ -155,6 +155,12 @@ const api = {
     return () => { ipcRenderer.removeListener('window:shown', callback) }
   },
 
+  // Theme
+  getThemeData: () => ipcRenderer.invoke('theme:get-data'),
+  setActiveTheme: (themeId: string) => ipcRenderer.invoke('theme:set-active', themeId),
+  saveCustomTheme: (theme: any) => ipcRenderer.invoke('theme:save-custom', theme),
+  deleteCustomTheme: (themeId: string) => ipcRenderer.invoke('theme:delete-custom', themeId),
+
   // Offline queue
   getOfflineQueue: () => ipcRenderer.invoke('offline:get-queue'),
   processOfflineQueue: () => ipcRenderer.invoke('offline:process-now'),

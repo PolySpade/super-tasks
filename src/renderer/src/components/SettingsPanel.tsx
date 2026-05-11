@@ -1,7 +1,10 @@
 import { useState, useEffect, useCallback } from 'react'
 import { LogOut, Check, X, Loader2, Plus } from 'lucide-react'
-import { PlannerSettings, PomodoroConfig } from '../types'
+import { PlannerSettings, PomodoroConfig, Theme } from '../types'
 import { NudgeSettings } from './NudgeSettings'
+import { ThemePicker } from './ThemePicker'
+import { CustomThemeEditor } from './CustomThemeEditor'
+import { applyTheme, resolveTheme, BUILT_IN_THEMES } from '../utils/theme'
 
 interface SettingsPanelProps {
   onSignOut: () => void
@@ -44,6 +47,12 @@ export function SettingsPanel({ onSignOut }: SettingsPanelProps) {
   const [ollamaModelsLoading, setOllamaModelsLoading] = useState(false)
   const [ollamaModelsError, setOllamaModelsError] = useState('')
   const [ollamaConnected, setOllamaConnected] = useState(false)
+
+  // Theme state
+  const [activeThemeId, setActiveThemeId] = useState('midnight')
+  const [customThemes, setCustomThemes] = useState<Theme[]>([])
+  const [showThemeEditor, setShowThemeEditor] = useState(false)
+  const [editingTheme, setEditingTheme] = useState<Theme | null>(null)
 
   const fetchOllamaModels = async (baseUrl: string) => {
     setOllamaModelsLoading(true)
@@ -115,6 +124,12 @@ export function SettingsPanel({ onSignOut }: SettingsPanelProps) {
     window.api.getPersona().then((result) => {
       if (result.success && result.data) {
         setPersona(result.data)
+      }
+    })
+    window.api.getThemeData().then((result) => {
+      if (result.success && result.data) {
+        setActiveThemeId(result.data.activeThemeId || 'midnight')
+        setCustomThemes(result.data.customThemes || [])
       }
     })
   }, [])
@@ -219,12 +234,76 @@ export function SettingsPanel({ onSignOut }: SettingsPanelProps) {
     ;(e.target as HTMLElement).blur()
   }, [])
 
+  const handleThemeChange = async (themeId: string) => {
+    const theme = resolveTheme(themeId, customThemes)
+    if (theme) {
+      applyTheme(theme.colors)
+      setActiveThemeId(themeId)
+      await window.api.setActiveTheme(themeId)
+    }
+  }
+
+  const handleSaveCustomTheme = async (theme: Theme) => {
+    const result = await window.api.saveCustomTheme(theme)
+    if (result.success && result.data) {
+      setCustomThemes(result.data.customThemes || [])
+      setActiveThemeId(theme.id)
+      await window.api.setActiveTheme(theme.id)
+    }
+    setShowThemeEditor(false)
+    setEditingTheme(null)
+  }
+
+  const handleDeleteCustomTheme = async (themeId: string) => {
+    const result = await window.api.deleteCustomTheme(themeId)
+    if (result.success && result.data) {
+      setCustomThemes(result.data.customThemes || [])
+      setActiveThemeId(result.data.activeThemeId)
+      const theme = resolveTheme(result.data.activeThemeId, result.data.customThemes || [])
+      if (theme) applyTheme(theme.colors)
+    }
+    setShowThemeEditor(false)
+    setEditingTheme(null)
+  }
+
+  const handleCancelThemeEditor = () => {
+    // Revert to current active theme
+    const theme = resolveTheme(activeThemeId, customThemes)
+    if (theme) applyTheme(theme.colors)
+    setShowThemeEditor(false)
+    setEditingTheme(null)
+  }
+
   const savePersonaField = (field: string, value: string) => {
     window.api.setPersona({ [field]: value })
   }
 
   return (
     <div className="settings-panel">
+      {/* Appearance */}
+      <div className="settings-section-label">Appearance</div>
+      <div className="settings-item settings-item-col">
+        <ThemePicker
+          activeThemeId={activeThemeId}
+          customThemes={customThemes}
+          onThemeChange={handleThemeChange}
+          onCreateCustom={() => { setEditingTheme(null); setShowThemeEditor(true) }}
+          onEditCustom={(theme) => { setEditingTheme(theme); setShowThemeEditor(true) }}
+          onDeleteCustom={handleDeleteCustomTheme}
+        />
+      </div>
+
+      <div className="settings-divider" />
+
+      {showThemeEditor && (
+        <CustomThemeEditor
+          theme={editingTheme}
+          onSave={handleSaveCustomTheme}
+          onCancel={handleCancelThemeEditor}
+          onDelete={editingTheme ? handleDeleteCustomTheme : undefined}
+        />
+      )}
+
       {/* Persona */}
       <div className="settings-section-label">Persona</div>
 

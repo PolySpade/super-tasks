@@ -16,6 +16,7 @@ import { getPendingQueue } from './offline-queue'
 import { getCalendars, getEvents, createEvent, updateEvent, deleteEvent } from './google-calendar-api'
 import { getSettings, updateSettings } from './settings-store'
 import { getPersona, setPersona, isPersonaConfigured } from './persona-store'
+import { getThemeData, setActiveTheme, saveCustomTheme, deleteCustomTheme } from './theme-store'
 import { generatePlan, validateApiKey, generateSubtasks, workBackwards, renameTasks, sortTasksToLists, listOllamaModels } from './ai-planner'
 import { getStartupEnabled, setStartupEnabled } from './startup'
 import { appendMetaTag } from './task-meta-utils'
@@ -856,6 +857,43 @@ export function registerIpcHandlers(): void {
   ipcMain.handle('time-tracking:get-historical', () => {
     try {
       const data = getHistoricalData()
+      return { success: true, data }
+    } catch (error: any) {
+      return { success: false, error: error.message }
+    }
+  })
+
+  // Theme
+  ipcMain.handle('theme:get-data', () => {
+    try {
+      const data = getThemeData()
+      return { success: true, data }
+    } catch (error: any) {
+      return { success: false, error: error.message }
+    }
+  })
+
+  ipcMain.handle('theme:set-active', (_event, themeId: string) => {
+    try {
+      const data = setActiveTheme(themeId)
+      return { success: true, data }
+    } catch (error: any) {
+      return { success: false, error: error.message }
+    }
+  })
+
+  ipcMain.handle('theme:save-custom', (_event, theme: any) => {
+    try {
+      const data = saveCustomTheme(theme)
+      return { success: true, data }
+    } catch (error: any) {
+      return { success: false, error: error.message }
+    }
+  })
+
+  ipcMain.handle('theme:delete-custom', (_event, themeId: string) => {
+    try {
+      const data = deleteCustomTheme(themeId)
       return { success: true, data }
     } catch (error: any) {
       return { success: false, error: error.message }
