@@ -2,7 +2,10 @@
   "name": "SuperTasks",
   "version": "1.1.0",
   "description": "A SuperCharged Google Tasks system tray app for Windows",
-  "author": "Donald",
+  "author": {
+    "name": "Donald",
+    "email": "donald@supertasks.app"
+  },
   "main": "./out/main/index.js",
   "scripts": {
     "dev": "electron-vite dev",
