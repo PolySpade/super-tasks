@@ -20,58 +20,63 @@ export function ThemePicker({
   onDeleteCustom
 }: ThemePickerProps) {
   const allThemes = [...BUILT_IN_THEMES, ...customThemes]
+  const activeTheme = allThemes.find((t) => t.id === activeThemeId)
 
   return (
     <div className="theme-picker">
-      {allThemes.map((theme) => {
-        const isActive = activeThemeId === theme.id
-        return (
-          <div
-            key={theme.id}
-            className={`theme-row ${isActive ? 'theme-row-active' : ''}`}
-            onClick={() => onThemeChange(theme.id)}
-          >
-            <div className="theme-row-left">
+      <div className="theme-dots">
+        {allThemes.map((theme) => {
+          const isActive = activeThemeId === theme.id
+          return (
+            <button
+              key={theme.id}
+              className={`theme-dot-btn ${isActive ? 'theme-dot-btn-active' : ''}`}
+              onClick={() => onThemeChange(theme.id)}
+              title={theme.name}
+            >
               <div
-                className="theme-dot"
+                className="theme-dot-fill"
                 style={{ background: theme.colors.bgPrimary, borderColor: theme.colors.accent }}
-              >
-                <div className="theme-dot-inner" style={{ background: theme.colors.accent }} />
-              </div>
-              <span className="theme-row-name">{theme.name}</span>
-            </div>
-            <div className="theme-row-right">
-              {!theme.builtIn && (
-                <>
-                  <button
-                    className="theme-row-action"
-                    onClick={(e) => { e.stopPropagation(); onEditCustom(theme) }}
-                    title="Edit"
-                  >
-                    <Pencil size={11} />
-                  </button>
-                  <button
-                    className="theme-row-action theme-row-action-danger"
-                    onClick={(e) => { e.stopPropagation(); onDeleteCustom(theme.id) }}
-                    title="Delete"
-                  >
-                    <Trash2 size={11} />
-                  </button>
-                </>
+              />
+              {isActive && (
+                <div className="theme-dot-check" style={{ color: theme.colors.accent }}>
+                  <Check size={10} strokeWidth={3} />
+                </div>
               )}
-              {isActive && <Check size={14} className="theme-row-check" />}
-            </div>
-          </div>
-        )
-      })}
-      <div className="theme-row theme-row-add" onClick={onCreateCustom}>
-        <div className="theme-row-left">
-          <div className="theme-dot theme-dot-add">
-            <Plus size={10} />
-          </div>
-          <span className="theme-row-name">New theme</span>
-        </div>
+            </button>
+          )
+        })}
+        <button
+          className="theme-dot-btn theme-dot-btn-add"
+          onClick={onCreateCustom}
+          title="New theme"
+        >
+          <Plus size={12} />
+        </button>
       </div>
+      {activeTheme && (
+        <div className="theme-active-label">
+          <span>{activeTheme.name}</span>
+          {!activeTheme.builtIn && (
+            <div className="theme-active-actions">
+              <button
+                className="theme-active-action"
+                onClick={() => onEditCustom(activeTheme)}
+                title="Edit"
+              >
+                <Pencil size={11} />
+              </button>
+              <button
+                className="theme-active-action theme-active-action-danger"
+                onClick={() => onDeleteCustom(activeTheme.id)}
+                title="Delete"
+              >
+                <Trash2 size={11} />
+              </button>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   )
 }
